@@ -329,9 +329,51 @@ the emulator and all assertions pass. Failures here block "done."
 
 ---
 
-## Review (filled in at end of session)
+## Review
 
-_To be written after implementation._
+**Built and verified**
+
+- Monorepo scaffolded: `apps/mobile` (Expo stub), `apps/admin` (Next.js stub), `packages/shared` (engine + types), `functions` (skeleton + rules tests). Root `package.json` workspaces, `tsconfig.base.json` with strict mode (`noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`).
+- `packages/shared` is pure TS, no Firebase deps:
+  - Branded `Money` type (safe-integer UGX), branded ID types
+  - `ChamaPolicies` discriminated unions (contribution/selection/trigger/accrual)
+  - `PHASE1_PRESETS` for merry-go-round, fixed-savings, welfare
+  - Account taxonomy + helpers (`memberAccount`, `poolAccount`, `poolEquityAccount`, `reserveAccount`, `feesAccount`, `providerClearingAccount`, `externalAccount`)
+  - `assertBalanced` — invariant verifier
+  - `applyEvent(event, ctx)` — single engine entry point. Dispatches on event kind; consults policy registry. No branching on chama type.
+  - zod schemas for every Firestore doc shape
+- 9 engine unit tests pass: contribution (pool + reserve), discount-bid cycle close with dividend split + remainder allocation, no-bid settle, welfare claim approval, fixed-savings maturity proRata, pre-maturity no-op, and `assertBalanced` failure case
+- `firestore.rules` written:
+  - All financial collections (`ledger_entries`, `transactions`, `payouts`, `audit_log`) are deny-all on writes
+  - Chama reads gated on active membership via deterministic membership doc id (`${chamaId}_${uid}`)
+  - Users can only read own profile; KYC self-approval blocked
+  - Bid creation/withdraw allowed only for self in `bidding` cycle state
+  - Claim filing in `submitted` state allowed; approval is Functions-only
+- `storage.rules` — KYC selfie reads gated by `kycReviewer` custom claim; no client writes
+- 21 rules emulator tests pass — proves unauthorized writes are blocked, scope is enforced, role gating works
+
+**Architectural notes**
+
+- The double-entry ledger uses two account categories (CASH and EQUITY) plus a per-chama `poolEquity` offset account. Every event group sums to zero per currency. This invariant is verified per-event in the engine.
+- Membership doc id convention (`${chamaId}_${uid}`) gives rules O(1) membership lookup with a single `get()`. No `query` calls in rules — they don't permit them anyway, and this dodges the issue cleanly.
+- The engine and Firestore are completely decoupled. Functions read Firestore, build an `EngineContext`, call `applyEvent`, write the resulting postings + state updates back transactionally. This is what makes the engine pure-unit-testable.
+
+**Out of scope (deferred to Phase 2+)**
+
+- Real MoMo / Airtel adapters — only the abstract `Provider` enum + `Transaction` schema land in Phase 1
+- Cloud Functions concrete implementations (callable endpoints, webhook handlers, scheduled reconciliation, KYC signed-URL minting). The Functions workspace is wired up and ready; only the `_engineImported` shape stub ships in Phase 1
+- Mobile + admin UIs — both apps are scaffolded with valid package.json/tsconfig but no screens
+- FCM, multi-currency support beyond the field reservation
+- Admin KYC review queue UI (KYC data plumbing IS landed; admin UI is Phase 2/3)
+
+**Open questions for Phase 2**
+
+1. **MoMo/Airtel sandbox creds:** which environment do we target first (MTN Sandbox? Mobile Money Open API?). Do we need a sponsor relationship for production?
+2. **Idempotency strategy specifics:** the schema reserves `idempotencyKey` on `transactions`. Should the client mint it (UUID per user action) or Functions (deterministic hash)? Lean Functions-side deterministic to make webhook retries safe.
+3. **Restricted-mode enforcement location:** chose Functions-only for Phase 1. Should we ALSO surface a `kycRestricted` claim so the rules can deny financial-action writes? Rules currently deny those anyway — the question is whether to surface "you can't do this" UX hints earlier.
+4. **Bid window mechanics:** how long does the `bidding` state stay open relative to `closesAt`? Suggest a separate `biddingClosesAt` field on `Cycle`. Not in the schema yet.
+5. **Welfare claim evidence:** should we require evidence (photo, doc) on submission? If yes, same signed-URL storage path as KYC selfies, or separate?
+6. **Member exit handling:** schema supports `status: 'exited'` but no policy for refunding their stake. Probably a dedicated `memberExit` event with policy-driven settlement.
 
 ## Lessons (separate file)
 

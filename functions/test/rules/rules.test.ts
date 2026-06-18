@@ -2,7 +2,7 @@ import { describe, it, before, after, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { assertFails, assertSucceeds } from '@firebase/rules-unit-testing';
 
-import { getEnv, cleanup, shutdown, seedChama, CHAMA_ID } from './setup';
+import { getEnv, cleanup, shutdown, seedChama, adminSet, CHAMA_ID } from './setup';
 
 before(async () => {
   await getEnv();
@@ -32,11 +32,9 @@ describe('rules — anonymous access', () => {
 describe('rules — user docs', () => {
   it('user can read own user doc', async () => {
     const env = await getEnv();
-    await env.withSecurityRulesDisabled(async (ctx) => {
-      await ctx.firestore().collection('users').doc('alice').set({
-        uid: 'alice', msisdn: '+256700000001', displayName: 'A',
-        locale: 'en', kyc: { status: 'pending' }, createdAt: 0, disabled: false,
-      });
+    await adminSet('users/alice', {
+      uid: 'alice', msisdn: '+256700000001', displayName: 'A',
+      locale: 'en', kyc: { status: 'pending' }, createdAt: 0, disabled: false,
     });
     const alice = env.authenticatedContext('alice');
     await assertSucceeds(alice.firestore().collection('users').doc('alice').get());
@@ -44,11 +42,9 @@ describe('rules — user docs', () => {
 
   it('user cannot read another user doc', async () => {
     const env = await getEnv();
-    await env.withSecurityRulesDisabled(async (ctx) => {
-      await ctx.firestore().collection('users').doc('bob').set({
-        uid: 'bob', msisdn: '+256700000002', displayName: 'B',
-        locale: 'en', kyc: { status: 'pending' }, createdAt: 0, disabled: false,
-      });
+    await adminSet('users/bob', {
+      uid: 'bob', msisdn: '+256700000002', displayName: 'B',
+      locale: 'en', kyc: { status: 'pending' }, createdAt: 0, disabled: false,
     });
     const alice = env.authenticatedContext('alice');
     await assertFails(alice.firestore().collection('users').doc('bob').get());
@@ -56,11 +52,9 @@ describe('rules — user docs', () => {
 
   it('user cannot self-approve KYC', async () => {
     const env = await getEnv();
-    await env.withSecurityRulesDisabled(async (ctx) => {
-      await ctx.firestore().collection('users').doc('alice').set({
-        uid: 'alice', msisdn: '+256700000001', displayName: 'A',
-        locale: 'en', kyc: { status: 'pending' }, createdAt: 0, disabled: false,
-      });
+    await adminSet('users/alice', {
+      uid: 'alice', msisdn: '+256700000001', displayName: 'A',
+      locale: 'en', kyc: { status: 'pending' }, createdAt: 0, disabled: false,
     });
     const alice = env.authenticatedContext('alice');
     await assertFails(alice.firestore().collection('users').doc('alice').update({
@@ -83,10 +77,9 @@ describe('rules — chama scoping', () => {
       { uid: 'alice', role: 'member' },
       { uid: 'bob', role: 'treasurer' },
     ]);
-    const alice = env.authenticatedContext('alice');
-    await assertSucceeds(alice.firestore().collection('chamas').doc(CHAMA_ID).get());
-    await assertSucceeds(alice.firestore().collection('chamas').doc(CHAMA_ID)
-      .collection('memberships').get());
+    const fs = env.authenticatedContext('alice').firestore();
+    await assertSucceeds(fs.collection('chamas').doc(CHAMA_ID).get());
+    await assertSucceeds(fs.collection('chamas').doc(CHAMA_ID).collection('memberships').get());
   });
 
   it('invited (non-active) member cannot read chama', async () => {
@@ -99,9 +92,9 @@ describe('rules — chama scoping', () => {
   it('client cannot write a chama or membership doc', async () => {
     const env = await getEnv();
     await seedChama(env, CHAMA_ID, [{ uid: 'alice', role: 'admin' }]);
-    const alice = env.authenticatedContext('alice');
-    await assertFails(alice.firestore().collection('chamas').doc(CHAMA_ID).update({ name: 'hacked' }));
-    await assertFails(alice.firestore().collection('chamas').doc(CHAMA_ID)
+    const fs = env.authenticatedContext('alice').firestore();
+    await assertFails(fs.collection('chamas').doc(CHAMA_ID).update({ name: 'hacked' }));
+    await assertFails(fs.collection('chamas').doc(CHAMA_ID)
       .collection('memberships').doc(`${CHAMA_ID}_alice`).update({ role: 'admin' }));
   });
 });
@@ -178,23 +171,26 @@ describe('rules — bids', () => {
       }));
   });
 
-  it('member can withdraw own bid but cannot mark it won', async () => {
+  it('member can withdraw own active bid', async () => {
     const env = await getEnv();
     await seedChama(env, CHAMA_ID, [{ uid: 'alice', role: 'member' }], { cycleState: 'bidding' });
-    await env.withSecurityRulesDisabled(async (ctx) => {
-      await ctx.firestore().collection('chamas').doc(CHAMA_ID)
-        .collection('cycles').doc('cyc1').collection('bids').doc('b1').set({
-          bidId: 'b1', cycleId: 'cyc1', chamaId: CHAMA_ID,
-          uid: 'alice', discount: 10_000, placedAt: 0, status: 'active',
-        });
+    await adminSet(`chamas/${CHAMA_ID}/cycles/cyc1/bids/b1`, {
+      bidId: 'b1', cycleId: 'cyc1', chamaId: CHAMA_ID,
+      uid: 'alice', discount: 10_000, placedAt: 0, status: 'active',
     });
     const alice = env.authenticatedContext('alice');
     await assertSucceeds(alice.firestore().collection('chamas').doc(CHAMA_ID)
       .collection('cycles').doc('cyc1').collection('bids').doc('b1').update({ status: 'withdrawn' }));
-    await env.withSecurityRulesDisabled(async (ctx) => {
-      await ctx.firestore().collection('chamas').doc(CHAMA_ID)
-        .collection('cycles').doc('cyc1').collection('bids').doc('b1').update({ status: 'active' });
+  });
+
+  it('member cannot self-mark their bid as won', async () => {
+    const env = await getEnv();
+    await seedChama(env, CHAMA_ID, [{ uid: 'alice', role: 'member' }], { cycleState: 'bidding' });
+    await adminSet(`chamas/${CHAMA_ID}/cycles/cyc1/bids/b1`, {
+      bidId: 'b1', cycleId: 'cyc1', chamaId: CHAMA_ID,
+      uid: 'alice', discount: 10_000, placedAt: 0, status: 'active',
     });
+    const alice = env.authenticatedContext('alice');
     await assertFails(alice.firestore().collection('chamas').doc(CHAMA_ID)
       .collection('cycles').doc('cyc1').collection('bids').doc('b1').update({ status: 'won' }));
   });
@@ -228,11 +224,9 @@ describe('rules — claims', () => {
     await seedChama(env, CHAMA_ID, [
       { uid: 'alice', role: 'member' }, { uid: 'tina', role: 'treasurer' },
     ]);
-    await env.withSecurityRulesDisabled(async (ctx) => {
-      await ctx.firestore().collection('chamas').doc(CHAMA_ID).collection('claims').doc('cl1').set({
-        claimId: 'cl1', chamaId: CHAMA_ID, uid: 'alice',
-        reason: 'Sick', amountRequested: 100_000, currency: 'UGX', state: 'submitted',
-      });
+    await adminSet(`chamas/${CHAMA_ID}/claims/cl1`, {
+      claimId: 'cl1', chamaId: CHAMA_ID, uid: 'alice',
+      reason: 'Sick', amountRequested: 100_000, currency: 'UGX', state: 'submitted',
     });
     const tina = env.authenticatedContext('tina');
     // Approval requires Functions (Admin SDK). Client write must fail.

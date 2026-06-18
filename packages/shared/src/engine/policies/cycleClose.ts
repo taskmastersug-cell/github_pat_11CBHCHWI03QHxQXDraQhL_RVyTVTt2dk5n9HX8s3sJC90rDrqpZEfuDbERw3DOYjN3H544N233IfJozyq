@@ -5,6 +5,8 @@ import {
 import type { Posting } from '../../ledger/types.js';
 import type { RoundPayEvent } from '../events.js';
 import type { EngineContext, StateUpdate } from '../context.js';
+import type { UserId } from '../../ids.js';
+import type { Money } from '../../money.js';
 
 // cycleClosed — selectionPolicy + accrualPolicy fire together at cycle close.
 //
@@ -133,7 +135,7 @@ function proRataDistribute(
   const totalBps = activeMemberships.reduce((s, m) => s + m.share, 0);
   const pool = cycle.pool;
   let allocated = 0;
-  const payouts: Array<{ recipientUid: ReturnType<typeof ctx.activeMemberships[number]['uid']>; amount: ReturnType<typeof money> }> = [];
+  const payouts: Array<{ recipientUid: UserId; amount: Money }> = [];
 
   const sortedMembers = [...activeMemberships].sort((a, b) => a.uid.localeCompare(b.uid));
   for (let i = 0; i < sortedMembers.length; i++) {
