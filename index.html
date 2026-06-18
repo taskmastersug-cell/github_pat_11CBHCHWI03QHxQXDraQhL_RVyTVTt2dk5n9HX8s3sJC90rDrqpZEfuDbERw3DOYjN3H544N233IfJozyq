@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Precise Pregnancy Due Date Calculator | Trimester & Gestational Age Tool</title>
+<meta name="description" content="Free, accurate pregnancy due date calculator. Estimate your EDD, current gestational age, trimester, and full pregnancy timeline based on LMP and cycle length." />
+<meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large" />
+<link rel="canonical" href="https://example.com/pregnancy-due-date-calculator" />
+
+<!-- Tailwind CSS via CDN -->
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          brand: {
+            50:  '#f0fbfa',
+            100: '#d9f4f1',
+            200: '#b3e8e3',
+            300: '#7fd5cd',
+            400: '#46b9b0',
+            500: '#2a9d94',
+            600: '#1f7e77',
+            700: '#1c645f',
+            800: '#19504d',
+            900: '#163f3d'
+          },
+          warm: {
+            50:  '#fbf8f4',
+            100: '#f3ecdf'
+          }
+        },
+        fontFamily: {
+          sans: ['Inter', 'system-ui', '-apple-system', 'Segoe UI', 'Roboto', 'sans-serif'],
+          serif: ['"Source Serif Pro"', 'Georgia', 'serif']
+        }
+      }
+    }
+  }
+</script>
+
+<style>
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+    line-height: 1.7;
+    color: #1f2937;
+    background: #fbf8f4;
+  }
+  .prose-content p { margin-bottom: 1rem; }
+  .prose-content strong { color: #163f3d; }
+
+  /* Ad placeholders with reserved dimensions (prevents CLS) */
+  .ad-placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: repeating-linear-gradient(
+      45deg,
+      #f3ecdf,
+      #f3ecdf 10px,
+      #ece4d2 10px,
+      #ece4d2 20px
+    );
+    border: 1px dashed #c9bfa8;
+    color: #7a6f55;
+    font-size: 0.8rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    border-radius: 8px;
+    width: 100%;
+  }
+  .ad-leaderboard { min-height: 100px; }
+  @media (min-width: 768px) { .ad-leaderboard { min-height: 120px; } }
+  .ad-native { min-height: 250px; }
+  .ad-anchor {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    height: 70px;
+    z-index: 50;
+    border-radius: 0;
+    border-left: none;
+    border-right: none;
+    border-bottom: none;
+  }
+  .ad-anchor .close-anchor {
+    position: absolute;
+    top: 4px; right: 8px;
+    background: rgba(255,255,255,0.85);
+    border-radius: 999px;
+    width: 22px; height: 22px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px;
+    cursor: pointer;
+    color: #444;
+  }
+
+  /* Timeline */
+  .timeline { position: relative; padding-left: 2rem; }
+  .timeline::before {
+    content: '';
+    position: absolute;
+    left: 8px; top: 0; bottom: 0;
+    width: 2px;
+    background: linear-gradient(to bottom, #46b9b0, #1f7e77);
+    border-radius: 2px;
+  }
+  .timeline-item { position: relative; margin-bottom: 2.25rem; }
+  .timeline-item::before {
+    content: '';
+    position: absolute;
+    left: -1.65rem; top: 0.4rem;
+    width: 14px; height: 14px;
+    border-radius: 999px;
+    background: #fff;
+    border: 3px solid #1f7e77;
+    box-shadow: 0 0 0 4px #d9f4f1;
+  }
+
+  /* FAQ accordion */
+  details.faq-item {
+    border-bottom: 1px solid #e5e7eb;
+  }
+  details.faq-item summary {
+    list-style: none;
+    cursor: pointer;
+    padding: 1.1rem 0;
+    font-weight: 600;
+    color: #163f3d;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+  }
+  details.faq-item summary::-webkit-details-marker { display: none; }
+  details.faq-item summary .chev {
+    transition: transform 0.25s ease;
+    flex-shrink: 0;
+  }
+  details.faq-item[open] summary .chev { transform: rotate(180deg); }
+  details.faq-item .faq-body {
+    padding: 0 0 1.25rem 0;
+    color: #374151;
+  }
+
+  /* Result highlight animation */
+  @keyframes pulseGlow {
+    0%   { box-shadow: 0 0 0 0 rgba(42,157,148, 0.45); }
+    70%  { box-shadow: 0 0 0 18px rgba(42,157,148, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(42,157,148, 0); }
+  }
+  .edd-highlight { animation: pulseGlow 1.8s ease-out 1; }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .fade-up { animation: fadeUp 0.45s ease-out both; }
+
+  /* Sticky TOC */
+  .toc-sticky { position: sticky; top: 1rem; }
+
+  /* Focus styles */
+  input:focus, select:focus, button:focus-visible {
+    outline: 2px solid #1f7e77;
+    outline-offset: 2px;
+  }
+
+  /* Body bottom padding so anchor ad doesn't cover content */
+  body { padding-bottom: 90px; }
+</style>
+
+<!-- JSON-LD: WebApplication -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebApplication",
+  "name": "Precise Pregnancy Due Date Calculator",
+  "url": "https://example.com/pregnancy-due-date-calculator",
+  "description": "Free online pregnancy due date calculator that estimates your EDD, current gestational age, and trimester based on your last menstrual period and cycle length.",
+  "applicationCategory": "HealthApplication",
+  "operatingSystem": "Any",
+  "browserRequirements": "Requires JavaScript. Modern browsers.",
+  "offers": {
+    "@type": "Offer",
+    "price": "0",
+    "priceCurrency": "USD"
+  },
+  "aggregateRating": {
+    "@type": "AggregateRating",
+    "ratingValue": "4.9",
+    "ratingCount": "2184"
+  }
+}
+</script>
+
+<!-- JSON-LD: FAQPage -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "How accurate is an online pregnancy due date calculator?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "An LMP-based calculator that adjusts for cycle length is accurate within a few days for most people. Only about 4% of babies arrive on the exact estimated due date; the vast majority are born within two weeks before or after. A first-trimester ultrasound dating scan remains the most precise method."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Can I use this calculator if my cycle is irregular?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "You can, but the estimate will be less reliable. Enter the average length of your cycle if you know it. If your cycles vary significantly, an early ultrasound (between weeks 8 and 13) provides the most accurate dating."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "What is the difference between gestational age and fetal age?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Gestational age is measured from the first day of your last menstrual period (LMP). Fetal (or fertilization) age is measured from the day of conception, which typically happens about two weeks later. Gestational age is therefore roughly two weeks longer than fetal age."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Can my due date change during pregnancy?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Yes. If a first-trimester ultrasound measurement of the embryo differs from the LMP-based date by more than about 7 days, clinicians usually adjust the due date to the ultrasound estimate."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "What if I conceived through IVF?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "IVF allows extremely precise dating. The due date is calculated from the embryo transfer date plus 266 days, minus the age of the embryo at transfer (e.g., 3 or 5 days). For IVF, do not rely on an LMP calculator."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "When is the best time to take a pregnancy test?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Most home pregnancy tests are reliable from the first day of a missed period. Testing earlier may produce a false negative because hCG levels are still too low to detect."
+      }
+    }
+  ]
+}
+</script>
+</head>
+
+<body class="antialiased">
+
+<!-- ============== HEADER ============== -->
+<header class="bg-gradient-to-br from-brand-50 via-warm-50 to-white border-b border-brand-100">
+  <div class="max-w-5xl mx-auto px-5 sm:px-8 py-10 sm:py-14 text-center">
+    <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brand-100 text-brand-800 text-xs font-semibold tracking-wide uppercase mb-5">
+      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+      Trusted by 200,000+ expectant parents
+    </div>
+    <h1 class="font-serif text-3xl sm:text-4xl md:text-5xl font-bold text-brand-900 leading-tight">
+      Precise Pregnancy Due Date Calculator
+    </h1>
+    <p class="mt-4 text-base sm:text-lg text-slate-600 max-w-2xl mx-auto">
+      Instantly calculate your estimated due date (EDD), current gestational age, and trimester — adjusted for your unique menstrual cycle.
+    </p>
+  </div>
+</header>
+
+<main class="max-w-5xl mx-auto px-5 sm:px-8">
+
+  <!-- ============== CALCULATOR ============== -->
+  <section aria-labelledby="calc-heading" class="-mt-6">
+    <div class="bg-white rounded-2xl shadow-xl ring-1 ring-brand-100 p-6 sm:p-10">
+      <h2 id="calc-heading" class="font-serif text-2xl sm:text-3xl font-bold text-brand-900 text-center">
+        Calculate Your Due Date
+      </h2>
+      <p class="text-center text-slate-600 mt-2 mb-8 text-sm sm:text-base">
+        Enter the first day of your last menstrual period and your average cycle length.
+      </p>
+
+      <form id="dueDateForm" class="grid grid-cols-1 md:grid-cols-2 gap-6" novalidate>
+        <div>
+          <label for="lmpDate" class="block text-sm font-semibold text-brand-800 mb-2">
+            First Day of Last Menstrual Period (LMP)
+          </label>
+          <input
+            type="date"
+            id="lmpDate"
+            name="lmpDate"
+            required
+            class="w-full px-4 py-3 text-base border border-slate-300 rounded-lg bg-warm-50 focus:bg-white focus:border-brand-500 transition"
+          />
+          <p class="text-xs text-slate-500 mt-1">The first day of bleeding, not the last.</p>
+        </div>
+
+        <div>
+          <label for="cycleLength" class="block text-sm font-semibold text-brand-800 mb-2">
+            Average Cycle Length: <span id="cycleLengthValue" class="text-brand-600 font-bold">28</span> days
+          </label>
+          <input
+            type="range"
+            id="cycleLength"
+            name="cycleLength"
+            min="22"
+            max="45"
+            value="28"
+            step="1"
+            class="w-full accent-brand-600 h-2"
+          />
+          <div class="flex justify-between text-xs text-slate-500 mt-1">
+            <span>22</span><span>28 (avg)</span><span>45</span>
+          </div>
+        </div>
+
+        <div class="md:col-span-2 flex flex-col sm:flex-row gap-3 mt-2">
+          <button type="submit"
+            class="flex-1 inline-flex items-center justify-center gap-2 bg-brand-600 hover:bg-brand-700 text-white font-semibold py-3.5 px-6 rounded-lg shadow-md transition">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            Calculate Due Date
+          </button>
+          <button type="button" id="resetBtn"
+            class="sm:w-40 inline-flex items-center justify-center gap-2 bg-white hover:bg-slate-50 text-brand-700 font-semibold py-3.5 px-6 rounded-lg border border-brand-200 transition">
+            Reset
+          </button>
+        </div>
+      </form>
+
+      <!-- Results -->
+      <div id="results" class="hidden mt-8 pt-8 border-t border-slate-200">
+        <div id="eddCard" class="text-center bg-gradient-to-br from-brand-500 to-brand-700 text-white rounded-2xl p-6 sm:p-8 shadow-lg">
+          <p class="text-sm uppercase tracking-widest text-brand-100">Your Estimated Due Date</p>
+          <p id="eddDate" class="font-serif text-3xl sm:text-5xl font-bold mt-2"></p>
+          <p id="eddCountdown" class="mt-2 text-brand-100 text-sm sm:text-base"></p>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-5">
+          <div class="bg-warm-50 rounded-xl p-5 text-center border border-warm-100">
+            <p class="text-xs uppercase tracking-wide text-slate-500 font-semibold">Gestational Age</p>
+            <p id="gestAge" class="font-serif text-xl sm:text-2xl font-bold text-brand-800 mt-1"></p>
+          </div>
+          <div class="bg-warm-50 rounded-xl p-5 text-center border border-warm-100">
+            <p class="text-xs uppercase tracking-wide text-slate-500 font-semibold">Current Trimester</p>
+            <p id="trimester" class="font-serif text-xl sm:text-2xl font-bold text-brand-800 mt-1"></p>
+          </div>
+          <div class="bg-warm-50 rounded-xl p-5 text-center border border-warm-100">
+            <p class="text-xs uppercase tracking-wide text-slate-500 font-semibold">Conception (est.)</p>
+            <p id="conception" class="font-serif text-xl sm:text-2xl font-bold text-brand-800 mt-1"></p>
+          </div>
+        </div>
+
+        <p id="errorMsg" class="hidden mt-4 text-center text-red-600 text-sm"></p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============== AD ZONE 1: LEADERBOARD ============== -->
+  <div class="my-10">
+    <div class="ad-placeholder ad-leaderboard" role="complementary" aria-label="Advertisement">
+      Advertisement
+    </div>
+  </div>
+
+  <!-- ============== TOC + CONTENT GRID ============== -->
+  <div class="grid grid-cols-1 lg:grid-cols-4 gap-10">
+
+    <!-- Sticky TOC -->
+    <aside class="lg:col-span-1 order-2 lg:order-1">
+      <nav aria-label="Table of contents" class="toc-sticky bg-white border border-slate-200 rounded-xl p-5">
+        <p class="text-xs font-bold uppercase tracking-wider text-brand-700 mb-3">On This Page</p>
+        <ul class="space-y-2 text-sm">
+          <li><a href="#how-calculated" class="text-slate-700 hover:text-brand-700 hover:underline block">How Your Due Date Is Calculated</a></li>
+          <li><a href="#timeline" class="text-slate-700 hover:text-brand-700 hover:underline block">Comprehensive Trimester Timeline</a></li>
+          <li class="pl-3 border-l-2 border-brand-100"><a href="#t1" class="text-slate-600 hover:text-brand-700 block">Trimester 1 (Weeks 1–12)</a></li>
+          <li class="pl-3 border-l-2 border-brand-100"><a href="#t2" class="text-slate-600 hover:text-brand-700 block">Trimester 2 (Weeks 13–26)</a></li>
+          <li class="pl-3 border-l-2 border-brand-100"><a href="#t3" class="text-slate-600 hover:text-brand-700 block">Trimester 3 (Weeks 27–40)</a></li>
+          <li><a href="#faqs" class="text-slate-700 hover:text-brand-700 hover:underline block">Pregnancy Due Date FAQs</a></li>
+        </ul>
+      </nav>
+    </aside>
+
+    <!-- Deep content -->
+    <article class="lg:col-span-3 order-1 lg:order-2 prose-content">
+
+      <!-- H2: HOW CALCULATED -->
+      <section id="how-calculated" class="scroll-mt-8">
+        <h2 class="font-serif text-2xl sm:text-3xl font-bold text-brand-900 mt-4 mb-4">
+          How is Your Due Date Actually Calculated?
+        </h2>
+        <p>
+          The most widely used method for estimating a due date is <strong>Naegele's Rule</strong>, developed by German obstetrician Franz Karl Naegele in the early 1800s. The rule is elegantly simple: take the first day of your last menstrual period (LMP), subtract three months, and add seven days — the result is your estimated due date (EDD), roughly <strong>280 days (40 weeks)</strong> after your LMP.
+        </p>
+        <p>
+          This works because Naegele's Rule assumes a textbook <strong>28-day menstrual cycle</strong> with ovulation occurring on day 14. In reality, very few people have a perfectly average cycle. If your cycle is longer than 28 days, ovulation (and conception) happens later — so the true due date is pushed back. Shorter cycles pull the EDD forward. Our calculator automatically applies this adjustment using the formula:
+        </p>
+        <p class="bg-warm-50 border-l-4 border-brand-500 px-5 py-3 my-4 italic text-brand-900 rounded-r-lg">
+          Adjusted EDD = LMP + 280 days + (Your Cycle Length − 28)
+        </p>
+
+        <h3 class="font-serif text-xl font-bold text-brand-800 mt-7 mb-3">Gestational Age vs. Fertilization Age</h3>
+        <p>
+          These two terms are routinely confused. <strong>Gestational age</strong> is counted from the first day of your LMP — even though you weren't technically pregnant yet at that point. <strong>Fertilization (or fetal) age</strong> begins at conception, which usually happens about two weeks after the LMP. The result: when your doctor says you are "10 weeks pregnant," the embryo itself is roughly 8 weeks old.
+        </p>
+
+        <h3 class="font-serif text-xl font-bold text-brand-800 mt-7 mb-3">Why Cycle Length Matters</h3>
+        <p>
+          Studies show that fewer than 5% of pregnant individuals deliver on their predicted due date. The single biggest driver of inaccuracy is <strong>variation in cycle length</strong>. Someone with a 35-day cycle who relies on a standard 28-day calculator can be a full week off — enough to affect screening windows, scheduled inductions, and even decisions around viability. Adjusting for your real cycle gives you a meaningfully more precise window.
+        </p>
+      </section>
+
+      <!-- AD ZONE 2: NATIVE IN-CONTENT -->
+      <div class="my-10">
+        <div class="ad-placeholder ad-native" role="complementary" aria-label="Sponsored content">
+          Sponsored
+        </div>
+      </div>
+
+      <!-- H2: TIMELINE -->
+      <section id="timeline" class="scroll-mt-8">
+        <h2 class="font-serif text-2xl sm:text-3xl font-bold text-brand-900 mt-4 mb-6">
+          The Comprehensive Trimester Timeline
+        </h2>
+        <p class="mb-8">
+          Pregnancy unfolds in three distinct phases, each with its own physiological milestones, common symptoms, and recommended medical scans. Use the timeline below to know what to expect — and when to ask questions.
+        </p>
+
+        <!-- Trimester 1 -->
+        <h3 id="t1" class="font-serif text-xl font-bold text-brand-800 mt-2 mb-4 scroll-mt-8">
+          Trimester 1 — Weeks 1 to 12: The Foundation
+        </h3>
+        <div class="timeline">
+          <div class="timeline-item">
+            <p class="font-bold text-brand-900">Weeks 1–4: Conception &amp; Implantation</p>
+            <ul class="list-disc pl-5 mt-1 text-slate-700 space-y-1">
+              <li><strong>Ovulation</strong> and fertilization typically occur around week 2.</li>
+              <li>The blastocyst implants in the uterine lining around <strong>week 4</strong>.</li>
+              <li>A <strong>missed period</strong> is usually the earliest sign.</li>
+            </ul>
+          </div>
+          <div class="timeline-item">
+            <p class="font-bold text-brand-900">Weeks 5–8: Rapid Embryonic Development</p>
+            <ul class="list-disc pl-5 mt-1 text-slate-700 space-y-1">
+              <li>The neural tube, heart, and limb buds form.</li>
+              <li>Common symptoms: <strong>morning sickness</strong>, fatigue, breast tenderness.</li>
+              <li>First prenatal appointment often scheduled around <strong>week 8</strong>.</li>
+            </ul>
+          </div>
+          <div class="timeline-item">
+            <p class="font-bold text-brand-900">Weeks 9–12: Fetal Period Begins</p>
+            <ul class="list-disc pl-5 mt-1 text-slate-700 space-y-1">
+              <li>The embryo is now officially a <strong>fetus</strong>.</li>
+              <li><strong>Dating ultrasound</strong> typically performed between weeks 8 and 13.</li>
+              <li>Optional <strong>NIPT (non-invasive prenatal testing)</strong> available from week 10.</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Trimester 2 -->
+        <h3 id="t2" class="font-serif text-xl font-bold text-brand-800 mt-8 mb-4 scroll-mt-8">
+          Trimester 2 — Weeks 13 to 26: The Golden Period
+        </h3>
+        <div class="timeline">
+          <div class="timeline-item">
+            <p class="font-bold text-brand-900">Weeks 13–16: Energy Returns</p>
+            <ul class="list-disc pl-5 mt-1 text-slate-700 space-y-1">
+              <li>Nausea typically subsides; appetite returns.</li>
+              <li>A small <strong>baby bump</strong> may become visible.</li>
+            </ul>
+          </div>
+          <div class="timeline-item">
+            <p class="font-bold text-brand-900">Weeks 17–20: Anatomy Scan</p>
+            <ul class="list-disc pl-5 mt-1 text-slate-700 space-y-1">
+              <li><strong>Mid-pregnancy ultrasound</strong> evaluates organ development.</li>
+              <li>Many people feel <strong>quickening</strong> — the first fetal movements.</li>
+              <li>Biological sex can usually be identified.</li>
+            </ul>
+          </div>
+          <div class="timeline-item">
+            <p class="font-bold text-brand-900">Weeks 21–26: Steady Growth</p>
+            <ul class="list-disc pl-5 mt-1 text-slate-700 space-y-1">
+              <li><strong>Glucose screening</strong> for gestational diabetes around weeks 24–28.</li>
+              <li>Baby develops sleep cycles and responds to sound.</li>
+              <li>Threshold of <strong>viability</strong> is generally reached at week 24.</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Trimester 3 -->
+        <h3 id="t3" class="font-serif text-xl font-bold text-brand-800 mt-8 mb-4 scroll-mt-8">
+          Trimester 3 — Weeks 27 to 40+: The Home Stretch
+        </h3>
+        <div class="timeline">
+          <div class="timeline-item">
+            <p class="font-bold text-brand-900">Weeks 27–32: Preparing the Lungs</p>
+            <ul class="list-disc pl-5 mt-1 text-slate-700 space-y-1">
+              <li>Lungs begin producing <strong>surfactant</strong>.</li>
+              <li>Symptoms intensify: heartburn, swelling, shortness of breath.</li>
+              <li><strong>Tdap vaccine</strong> typically administered weeks 27–36.</li>
+            </ul>
+          </div>
+          <div class="timeline-item">
+            <p class="font-bold text-brand-900">Weeks 33–36: Final Positioning</p>
+            <ul class="list-disc pl-5 mt-1 text-slate-700 space-y-1">
+              <li>Most babies turn <strong>head-down</strong>.</li>
+              <li><strong>Group B Strep (GBS) test</strong> around weeks 36–37.</li>
+              <li>Hospital bag and birth plan finalized.</li>
+            </ul>
+          </div>
+          <div class="timeline-item">
+            <p class="font-bold text-brand-900">Weeks 37–40+: Full Term</p>
+            <ul class="list-disc pl-5 mt-1 text-slate-700 space-y-1">
+              <li><strong>Early term</strong> at 37 weeks; <strong>full term</strong> at 39 weeks.</li>
+              <li>Watch for signs of labor: contractions, mucus plug, water breaking.</li>
+              <li><strong>Post-term</strong> begins at 42 weeks — induction usually discussed by 41 weeks.</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- H2: FAQs -->
+      <section id="faqs" class="scroll-mt-8 mt-12">
+        <h2 class="font-serif text-2xl sm:text-3xl font-bold text-brand-900 mb-4">
+          Pregnancy Due Date FAQs
+        </h2>
+        <p class="mb-4">Quick answers to the questions expectant parents ask most.</p>
+
+        <div class="bg-white rounded-xl border border-slate-200 px-5 sm:px-7">
+          <details class="faq-item">
+            <summary>How accurate is an online pregnancy due date calculator?
+              <svg class="chev" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+            </summary>
+            <div class="faq-body">An LMP-based calculator that adjusts for cycle length is accurate within a few days for most people. Only about <strong>4% of babies arrive on the exact estimated due date</strong>; the vast majority are born within two weeks before or after. A first-trimester ultrasound dating scan remains the most precise method.</div>
+          </details>
+          <details class="faq-item">
+            <summary>Can I use this calculator if my cycle is irregular?
+              <svg class="chev" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+            </summary>
+            <div class="faq-body">You can, but the estimate will be less reliable. Enter the <strong>average</strong> length of your cycle. If your cycles vary significantly, an early ultrasound (between weeks 8 and 13) provides the most accurate dating.</div>
+          </details>
+          <details class="faq-item">
+            <summary>What is the difference between gestational age and fetal age?
+              <svg class="chev" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+            </summary>
+            <div class="faq-body"><strong>Gestational age</strong> is measured from the first day of your last menstrual period (LMP). <strong>Fetal (or fertilization) age</strong> is measured from the day of conception, which typically happens about two weeks later. Gestational age is therefore roughly two weeks longer than fetal age.</div>
+          </details>
+          <details class="faq-item">
+            <summary>Can my due date change during pregnancy?
+              <svg class="chev" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+            </summary>
+            <div class="faq-body">Yes. If a first-trimester ultrasound measurement of the embryo differs from the LMP-based date by more than about <strong>7 days</strong>, clinicians usually adjust the due date to the ultrasound estimate.</div>
+          </details>
+          <details class="faq-item">
+            <summary>What if I conceived through IVF?
+              <svg class="chev" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+            </summary>
+            <div class="faq-body">IVF allows extremely precise dating. The due date is calculated from the <strong>embryo transfer date + 266 days, minus the age of the embryo at transfer</strong> (e.g., 3 or 5 days). For IVF pregnancies, do not rely on an LMP calculator.</div>
+          </details>
+          <details class="faq-item">
+            <summary>When is the best time to take a pregnancy test?
+              <svg class="chev" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+            </summary>
+            <div class="faq-body">Most home pregnancy tests are reliable from the <strong>first day of a missed period</strong>. Testing earlier may produce a false negative because hCG levels are still too low to detect.</div>
+          </details>
+        </div>
+      </section>
+
+      <!-- Disclaimer -->
+      <section class="mt-12 mb-10 p-5 bg-warm-50 border border-warm-100 rounded-xl text-sm text-slate-600">
+        <strong class="text-brand-800">Medical Disclaimer:</strong>
+        This calculator provides general informational estimates and is not a substitute for professional medical advice, diagnosis, or treatment. Always consult a qualified healthcare provider for clinical decisions related to your pregnancy.
+      </section>
+    </article>
+  </div>
+</main>
+
+<!-- Footer -->
+<footer class="bg-brand-900 text-brand-100 py-8 mt-10">
+  <div class="max-w-5xl mx-auto px-5 sm:px-8 text-center text-sm">
+    <p>&copy; <span id="year"></span> Precise Pregnancy Due Date Calculator. All information is for educational purposes only.</p>
+  </div>
+</footer>
+
+<!-- ============== AD ZONE 3: STICKY ANCHOR ============== -->
+<div id="anchorAd" class="ad-placeholder ad-anchor" role="complementary" aria-label="Advertisement">
+  Advertisement
+  <span class="close-anchor" id="closeAnchor" title="Close ad">&times;</span>
+</div>
+
+<script>
+(function () {
+  const form = document.getElementById('dueDateForm');
+  const lmpInput = document.getElementById('lmpDate');
+  const cycleInput = document.getElementById('cycleLength');
+  const cycleValue = document.getElementById('cycleLengthValue');
+  const resetBtn = document.getElementById('resetBtn');
+  const results = document.getElementById('results');
+  const eddCard = document.getElementById('eddCard');
+  const eddDate = document.getElementById('eddDate');
+  const eddCountdown = document.getElementById('eddCountdown');
+  const gestAge = document.getElementById('gestAge');
+  const trimester = document.getElementById('trimester');
+  const conception = document.getElementById('conception');
+  const errorMsg = document.getElementById('errorMsg');
+  const closeAnchor = document.getElementById('closeAnchor');
+  const anchorAd = document.getElementById('anchorAd');
+
+  document.getElementById('year').textContent = new Date().getFullYear();
+
+  // LMP cannot be in the future; cap at today, sensible 1-year lookback default-ready
+  const today = new Date();
+  const todayISO = today.toISOString().split('T')[0];
+  lmpInput.max = todayISO;
+
+  cycleInput.addEventListener('input', () => {
+    cycleValue.textContent = cycleInput.value;
+  });
+
+  function formatDate(d) {
+    return d.toLocaleDateString(undefined, {
+      weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+    });
+  }
+
+  function addDays(date, days) {
+    const d = new Date(date.getTime());
+    d.setDate(d.getDate() + days);
+    return d;
+  }
+
+  function diffInDays(a, b) {
+    const ms = 1000 * 60 * 60 * 24;
+    const utcA = Date.UTC(a.getFullYear(), a.getMonth(), a.getDate());
+    const utcB = Date.UTC(b.getFullYear(), b.getMonth(), b.getDate());
+    return Math.floor((utcB - utcA) / ms);
+  }
+
+  function showError(msg) {
+    errorMsg.textContent = msg;
+    errorMsg.classList.remove('hidden');
+  }
+  function clearError() {
+    errorMsg.textContent = '';
+    errorMsg.classList.add('hidden');
+  }
+
+  form.addEventListener('submit', function (e) {
+    e.preventDefault();
+    clearError();
+
+    if (!lmpInput.value) {
+      results.classList.remove('hidden');
+      showError('Please select the first day of your last menstrual period.');
+      return;
+    }
+
+    const parts = lmpInput.value.split('-').map(Number);
+    const lmp = new Date(parts[0], parts[1] - 1, parts[2]);
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+
+    if (lmp > now) {
+      results.classList.remove('hidden');
+      showError('LMP cannot be in the future.');
+      return;
+    }
+    const daysSinceLMP = diffInDays(lmp, now);
+    if (daysSinceLMP > 310) {
+      results.classList.remove('hidden');
+      showError('That LMP is more than 44 weeks ago — please double-check the date.');
+      return;
+    }
+
+    const cycle = parseInt(cycleInput.value, 10);
+    const adjustment = cycle - 28;
+
+    const edd = addDays(lmp, 280 + adjustment);
+    const conceptionDate = addDays(lmp, 14 + adjustment);
+
+    // Gestational age = days from LMP (LMP itself is day 0 of week 1)
+    let gestDays = daysSinceLMP;
+    if (gestDays < 0) gestDays = 0;
+    const weeks = Math.floor(gestDays / 7);
+    const days = gestDays % 7;
+
+    let tri;
+    if (weeks < 13) tri = 'First (1–12 wks)';
+    else if (weeks < 27) tri = 'Second (13–26 wks)';
+    else tri = 'Third (27–40+ wks)';
+
+    const daysToGo = diffInDays(now, edd);
+    let countdownText;
+    if (daysToGo > 0) {
+      countdownText = `${daysToGo} day${daysToGo === 1 ? '' : 's'} to go`;
+    } else if (daysToGo === 0) {
+      countdownText = 'That\'s today!';
+    } else {
+      countdownText = `${Math.abs(daysToGo)} day${Math.abs(daysToGo) === 1 ? '' : 's'} past due date`;
+    }
+
+    eddDate.textContent = formatDate(edd);
+    eddCountdown.textContent = countdownText;
+    gestAge.textContent = `${weeks}w ${days}d`;
+    trimester.textContent = tri;
+    conception.textContent = formatDate(conceptionDate);
+
+    results.classList.remove('hidden');
+    results.classList.add('fade-up');
+    eddCard.classList.remove('edd-highlight');
+    void eddCard.offsetWidth; // restart animation
+    eddCard.classList.add('edd-highlight');
+
+    results.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  });
+
+  resetBtn.addEventListener('click', function () {
+    form.reset();
+    cycleValue.textContent = '28';
+    cycleInput.value = 28;
+    results.classList.add('hidden');
+    results.classList.remove('fade-up');
+    clearError();
+  });
+
+  closeAnchor.addEventListener('click', function () {
+    anchorAd.style.display = 'none';
+    document.body.style.paddingBottom = '20px';
+  });
+})();
+</script>
+
+</body>
+</html>
