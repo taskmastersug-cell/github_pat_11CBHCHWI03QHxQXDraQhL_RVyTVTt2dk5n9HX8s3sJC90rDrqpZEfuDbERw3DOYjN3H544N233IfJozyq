@@ -1,0 +1,69 @@
+{
+  "auth": {
+    "phoneTitle": "Sign in",
+    "phoneSubtitle": "Enter your phone number to receive a one-time code.",
+    "phoneLabel": "Phone number",
+    "phonePlaceholder": "+2567...",
+    "sendCode": "Send code",
+    "otpTitle": "Enter code",
+    "otpSubtitle": "We sent a 6-digit code to {{phone}}.",
+    "otpLabel": "Verification code",
+    "verify": "Verify",
+    "resendIn": "Resend in {{seconds}}s",
+    "resend": "Resend code"
+  },
+  "kyc": {
+    "ninTitle": "Identity verification",
+    "ninSubtitle": "Enter your 14-character National ID number.",
+    "ninLabel": "NIN",
+    "selfieTitle": "Take a selfie",
+    "selfieSubtitle": "We use this to match your photo to your ID.",
+    "selfieCapture": "Take photo",
+    "selfiePick": "Choose from library",
+    "submit": "Submit for review",
+    "pendingTitle": "KYC under review",
+    "pendingBody": "You'll be able to contribute as soon as your KYC is approved.",
+    "rejectedTitle": "KYC was not approved",
+    "rejectedBody": "Please contact support."
+  },
+  "chama": {
+    "listTitle": "My chamas",
+    "empty": "You're not in any chama yet.",
+    "memberCount": "{{count}} member",
+    "memberCount_other": "{{count}} members",
+    "typeMerryGoRound": "Merry-go-round",
+    "typeFixedSavings": "Fixed savings",
+    "typeWelfare": "Welfare"
+  },
+  "cycle": {
+    "title": "Cycle {{index}}",
+    "pool": "Pool",
+    "myContribution": "Your contribution",
+    "statusPending": "Pending",
+    "statusPaid": "Paid",
+    "statusLate": "Late",
+    "statusWaived": "Waived",
+    "contribute": "Contribute now"
+  },
+  "contribute": {
+    "title": "Contribute",
+    "amountLabel": "Amount",
+    "providerLabel": "Pay with",
+    "providerMtn": "MTN MoMo",
+    "providerAirtel": "Airtel Money",
+    "msisdnLabel": "Mobile money number",
+    "submit": "Send request",
+    "instructionsTitle": "Approve on your phone",
+    "instructionsBody": "Check your phone for a prompt from {{provider}} and approve the payment.",
+    "waiting": "Waiting for confirmation...",
+    "success": "Payment received. Thank you!",
+    "failed": "Payment did not complete."
+  },
+  "errors": {
+    "generic": "Something went wrong. Please try again.",
+    "invalidPhone": "Enter a valid phone number.",
+    "invalidOtp": "Code must be 6 digits.",
+    "invalidNin": "NIN must be 14 characters.",
+    "selfieRequired": "Please add a selfie."
+  }
+}

@@ -39,6 +39,24 @@ engine and per-chama nightly in Functions.
 - [x] `storage.rules` — KYC selfie access control
 - [x] Rules emulator tests proving unauthorized writes are blocked
 
+### Phase 2 deliverables
+
+- [x] Provider adapters (MTN MoMo, Airtel Money, Mock) behind a single interface
+- [x] Cloud Function callables (KYC, chama creation, contribute, bid, claim, exit)
+- [x] Webhooks (MTN + Airtel), idempotency, dispatch glue
+- [x] Scheduled jobs (reconciliation, ledger verifier, cycle close)
+- [x] 60/60 tests green: engine, providers, rules, end-to-end pipeline
+
+### Phase 3 deliverables (in progress)
+
+- [x] Expo mobile app: expo-router groups, theme, primitives, i18n
+- [x] Phone OTP sign-in flow
+- [x] KYC flow (NIN entry + selfie capture/pick + signed-URL upload + submit)
+- [x] Chama list + detail (Firestore listeners)
+- [x] Cycle detail + contribute against MockProvider with live tx state
+- [x] `functions/.env.example` documenting MTN + Airtel sandbox vars
+- [ ] Live MTN + Airtel sandbox verification (gated on credentials)
+
 ### Setup
 
 ```sh

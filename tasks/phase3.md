@@ -146,6 +146,36 @@ Backend already supports `ROUNDPAY_USE_MOCK_PROVIDERS=1`. To verify real sandbox
 
 ---
 
+## Review
+
+**Built (mobile app + env scaffolding)**
+
+- Expo Router file-based navigation: `(auth)/phone`, `(auth)/otp`, `(kyc)/nin`, `(kyc)/selfie`, `(app)/index`, `(app)/chama/[id]`, `(app)/cycle/[id]`. Root `_layout` initializes Firebase + i18n; an `AuthGate` redirects based on `auth.user` and `users/{uid}.kyc.status` live from Firestore.
+- Firebase wiring (`src/firebase/init.ts`) reads `expo.extra` and connects Auth / Firestore / Functions / Storage emulators when `useEmulators` is true. Callable wrappers in `src/firebase/callables.ts` give typed access to `submitKyc`, `mintKycUploadUrl`, `initiateContribution`, `acceptInvite`.
+- Zustand stores: `auth` (phone OTP flow + Firebase user) and `kyc` (NIN draft between screens).
+- Live data hooks: `useUserDoc`, `useMyChamas` (collectionGroup query over memberships), `useChama`, `useCycles`, `useCycle`, `useMyContribution`, `useTransaction`. All snapshot-based so UI reflects webhook-driven state changes in real time.
+- UI primitives: `Button`, `Field`, `Money` (uses shared `formatMoney` + active i18n locale), `Screen` (safe area + keyboard avoidance), shared `theme` tokens.
+- i18n: i18next + react-i18next with `en` + `lg` resource files covering every visible string. Luganda strings stubbed `[LG] ...` so they're obvious in QA before translations land.
+- Contribution flow drives the Phase 2 backend end-to-end: `initiateContribution` callable → `transactions/{txId}` listener → success/failure surfaced when the webhook flips state.
+- `functions/.env.example` documents every MTN + Airtel sandbox variable (matches the names the existing `getProvider` registry already reads). `.env` is gitignored from Phase 1.
+- 6 mobile jest tests pass: 3 `Money` formatting (UGX en/lg/zero), 3 `KycDraft` store (initial state / set / reset). Backend Phase 2 suites still green (15 shared engine + 16 provider).
+
+**Architectural notes**
+
+- `exactOptionalPropertyTypes: true` made the `Field.error?: string` prop a friction point — `error` had to be declared `string | undefined` explicitly so callers can pass `error ?? undefined`. Kept that pattern consistent across all four call sites instead of `?` everywhere.
+- The mobile `Money` component reads `i18n.language` at render time so locale toggles re-format on the next React render without prop drilling.
+- `useMyChamas` uses a `collectionGroup('memberships')` query, which depends on the membership doc id convention from Phase 1 plus an index. The query filters by `uid` + `status='active'` — exactly the path the Phase 1 rules were designed to permit.
+- Jest preset: `jest-expo` failed to resolve under workspaces (preset module resolution looks at the package root). Phase 3 sidesteps this with a minimal inline transform config — RN-rendering component tests are deferred to Phase 4 where we'll either pin jest-expo with the right resolver hack or move to RNTL with a custom transformer.
+
+**Open questions for Phase 4**
+
+1. **Live sandbox creds:** still pending. Drop them into `functions/.env` per `.env.example`; the registry already resolves `mtnMomo` / `airtelMoney` once `ROUNDPAY_USE_MOCK_PROVIDERS=0`.
+2. **Reviewer admin app:** Next.js scaffold exists from Phase 1; Phase 4 fleshes out KYC queue + treasurer dashboard.
+3. **Bidding / claims / exit mobile UI:** intentionally out of Phase 3 (core-money-loop scope). Phase 4 should add them.
+4. **RN component testing:** revisit jest-expo resolution OR adopt React Native Testing Library with a hand-rolled transform. Phase 3 ships with logic-only tests.
+5. **Push notifications (FCM):** deferred; Phase 4 should pick the trigger set (contribution confirmed / payout sent / claim status / KYC approved are the obvious candidates).
+6. **Luganda translations:** every key exists; need a real translator to replace the `[LG] ...` stubs.
+
 ## Out of scope (Phase 4+)
 
 - Bidding UI, claims UI, exit UI

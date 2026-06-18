@@ -1,0 +1,69 @@
+{
+  "auth": {
+    "phoneTitle": "[LG] Sign in",
+    "phoneSubtitle": "[LG] Enter your phone number to receive a one-time code.",
+    "phoneLabel": "[LG] Phone number",
+    "phonePlaceholder": "+2567...",
+    "sendCode": "[LG] Send code",
+    "otpTitle": "[LG] Enter code",
+    "otpSubtitle": "[LG] We sent a 6-digit code to {{phone}}.",
+    "otpLabel": "[LG] Verification code",
+    "verify": "[LG] Verify",
+    "resendIn": "[LG] Resend in {{seconds}}s",
+    "resend": "[LG] Resend code"
+  },
+  "kyc": {
+    "ninTitle": "[LG] Identity verification",
+    "ninSubtitle": "[LG] Enter your 14-character National ID number.",
+    "ninLabel": "[LG] NIN",
+    "selfieTitle": "[LG] Take a selfie",
+    "selfieSubtitle": "[LG] We use this to match your photo to your ID.",
+    "selfieCapture": "[LG] Take photo",
+    "selfiePick": "[LG] Choose from library",
+    "submit": "[LG] Submit for review",
+    "pendingTitle": "[LG] KYC under review",
+    "pendingBody": "[LG] You'll be able to contribute as soon as your KYC is approved.",
+    "rejectedTitle": "[LG] KYC was not approved",
+    "rejectedBody": "[LG] Please contact support."
+  },
+  "chama": {
+    "listTitle": "[LG] My chamas",
+    "empty": "[LG] You're not in any chama yet.",
+    "memberCount": "[LG] {{count}} member",
+    "memberCount_other": "[LG] {{count}} members",
+    "typeMerryGoRound": "[LG] Merry-go-round",
+    "typeFixedSavings": "[LG] Fixed savings",
+    "typeWelfare": "[LG] Welfare"
+  },
+  "cycle": {
+    "title": "[LG] Cycle {{index}}",
+    "pool": "[LG] Pool",
+    "myContribution": "[LG] Your contribution",
+    "statusPending": "[LG] Pending",
+    "statusPaid": "[LG] Paid",
+    "statusLate": "[LG] Late",
+    "statusWaived": "[LG] Waived",
+    "contribute": "[LG] Contribute now"
+  },
+  "contribute": {
+    "title": "[LG] Contribute",
+    "amountLabel": "[LG] Amount",
+    "providerLabel": "[LG] Pay with",
+    "providerMtn": "[LG] MTN MoMo",
+    "providerAirtel": "[LG] Airtel Money",
+    "msisdnLabel": "[LG] Mobile money number",
+    "submit": "[LG] Send request",
+    "instructionsTitle": "[LG] Approve on your phone",
+    "instructionsBody": "[LG] Check your phone for a prompt from {{provider}} and approve the payment.",
+    "waiting": "[LG] Waiting for confirmation...",
+    "success": "[LG] Payment received. Thank you!",
+    "failed": "[LG] Payment did not complete."
+  },
+  "errors": {
+    "generic": "[LG] Something went wrong. Please try again.",
+    "invalidPhone": "[LG] Enter a valid phone number.",
+    "invalidOtp": "[LG] Code must be 6 digits.",
+    "invalidNin": "[LG] NIN must be 14 characters.",
+    "selfieRequired": "[LG] Please add a selfie."
+  }
+}

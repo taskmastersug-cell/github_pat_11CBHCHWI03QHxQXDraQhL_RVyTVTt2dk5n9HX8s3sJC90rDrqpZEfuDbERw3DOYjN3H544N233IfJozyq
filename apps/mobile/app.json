@@ -2,12 +2,23 @@
   "expo": {
     "name": "RoundPay",
     "slug": "roundpay",
+    "scheme": "roundpay",
     "version": "0.1.0",
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
     "platforms": ["ios", "android"],
     "splash": { "resizeMode": "contain", "backgroundColor": "#ffffff" },
     "ios": { "supportsTablet": false, "bundleIdentifier": "ug.roundpay.app" },
-    "android": { "package": "ug.roundpay.app" }
+    "android": { "package": "ug.roundpay.app" },
+    "plugins": ["expo-router", "expo-camera", "expo-image-picker", "expo-secure-store"],
+    "extra": {
+      "firebaseApiKey": "demo-api-key",
+      "firebaseAuthDomain": "roundpay-dev.firebaseapp.com",
+      "firebaseProjectId": "roundpay-dev",
+      "firebaseStorageBucket": "roundpay-dev.appspot.com",
+      "firebaseAppId": "1:0000000000:web:0000000000",
+      "useEmulators": true,
+      "emulatorHost": "localhost"
+    }
   }
 }
