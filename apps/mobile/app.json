@@ -1,0 +1,13 @@
+{
+  "expo": {
+    "name": "RoundPay",
+    "slug": "roundpay",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "platforms": ["ios", "android"],
+    "splash": { "resizeMode": "contain", "backgroundColor": "#ffffff" },
+    "ios": { "supportsTablet": false, "bundleIdentifier": "ug.roundpay.app" },
+    "android": { "package": "ug.roundpay.app" }
+  }
+}

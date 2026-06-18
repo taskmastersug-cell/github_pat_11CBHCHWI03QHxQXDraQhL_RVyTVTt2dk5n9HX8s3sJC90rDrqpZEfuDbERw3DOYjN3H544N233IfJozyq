@@ -1,0 +1,165 @@
+rules_version = '2';
+
+// RoundPay — Firestore security rules
+// ------------------------------------
+// Posture: clients can READ data they have a right to see; clients can WRITE
+// only the few non-financial documents (user profile, claim filing, bid
+// placement). All financial writes — ledger, transactions, payouts, audit log —
+// are deny-all from clients. Cloud Functions use the Admin SDK, which bypasses
+// rules, so legitimate writes go through there.
+
+service cloud.firestore {
+  match /databases/{db}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    function isSelf(uid) {
+      return isSignedIn() && request.auth.uid == uid;
+    }
+    function membership(chamaId) {
+      return get(/databases/$(db)/documents/chamas/$(chamaId)/memberships/$(chamaId + '_' + request.auth.uid));
+    }
+    function isMember(chamaId) {
+      return isSignedIn()
+          && exists(/databases/$(db)/documents/chamas/$(chamaId)/memberships/$(chamaId + '_' + request.auth.uid))
+          && membership(chamaId).data.status == 'active';
+    }
+    function hasRole(chamaId, role) {
+      return isMember(chamaId) && membership(chamaId).data.role == role;
+    }
+    function isTreasurerOrAdmin(chamaId) {
+      return hasRole(chamaId, 'treasurer') || hasRole(chamaId, 'admin');
+    }
+
+    // -------- users --------
+    // A user can read & update non-sensitive parts of their own profile.
+    // Other users' profiles are private — co-member display is via membership docs.
+    match /users/{uid} {
+      allow read: if isSelf(uid);
+      // Create allowed on first-login bootstrap; Functions also creates these
+      // (Admin SDK bypasses rules). The client path is restricted to safe fields.
+      allow create: if isSelf(uid)
+                    && request.resource.data.uid == uid
+                    && request.resource.data.disabled == false
+                    && request.resource.data.kyc.status in ['unstarted', 'pending'];
+      allow update: if isSelf(uid)
+                    && request.resource.data.uid == uid
+                    && request.resource.data.disabled == resource.data.disabled
+                    // KYC status can only move user-initiated -> 'pending'; approval
+                    // requires Functions.
+                    && (request.resource.data.kyc.status == resource.data.kyc.status
+                        || request.resource.data.kyc.status == 'pending');
+      allow delete: if false;
+    }
+
+    // -------- chamas --------
+    match /chamas/{chamaId} {
+      allow read: if isMember(chamaId);
+      // No client creation/update — Functions only. This keeps policy configs,
+      // contribution amounts, and memberCount tamper-proof.
+      allow write: if false;
+
+      // -------- memberships --------
+      match /memberships/{membershipId} {
+        // A member can read all memberships of their chama (for the roster UI).
+        allow read: if isMember(chamaId)
+                    || (isSignedIn() && resource.data.uid == request.auth.uid);
+        // Role + status + share are all Functions-controlled.
+        allow write: if false;
+      }
+
+      // -------- cycles --------
+      match /cycles/{cycleId} {
+        allow read: if isMember(chamaId);
+        allow write: if false;
+
+        // -------- bids --------
+        match /bids/{bidId} {
+          allow read: if isMember(chamaId);
+          // A member can create their OWN bid during cycle state == 'bidding'.
+          allow create: if isMember(chamaId)
+                        && request.resource.data.uid == request.auth.uid
+                        && request.resource.data.chamaId == chamaId
+                        && request.resource.data.cycleId == cycleId
+                        && request.resource.data.status == 'active'
+                        && request.resource.data.discount is int
+                        && request.resource.data.discount >= 0
+                        && get(/databases/$(db)/documents/chamas/$(chamaId)/cycles/$(cycleId)).data.state == 'bidding';
+          // Member may only withdraw their own active bid. Winner/loser
+          // transitions are Functions-only.
+          allow update: if isMember(chamaId)
+                        && resource.data.uid == request.auth.uid
+                        && resource.data.status == 'active'
+                        && request.resource.data.status == 'withdrawn'
+                        // Lock down: no other field may change.
+                        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status']);
+          allow delete: if false;
+        }
+      }
+
+      // -------- contributions --------
+      match /contributions/{cid} {
+        allow read: if isMember(chamaId)
+                    && (resource.data.uid == request.auth.uid || isTreasurerOrAdmin(chamaId));
+        // State transitions are Functions-only. Clients never write here.
+        allow write: if false;
+      }
+
+      // -------- claims --------
+      match /claims/{claimId} {
+        allow read: if isMember(chamaId)
+                    && (resource.data.uid == request.auth.uid || isTreasurerOrAdmin(chamaId));
+        // A member can file a claim for themselves, in 'submitted' state.
+        allow create: if isMember(chamaId)
+                      && request.resource.data.uid == request.auth.uid
+                      && request.resource.data.chamaId == chamaId
+                      && request.resource.data.state == 'submitted'
+                      && request.resource.data.amountRequested is int
+                      && request.resource.data.amountRequested > 0;
+        // Approval/rejection/payment is Functions-only.
+        allow update, delete: if false;
+      }
+
+      // -------- payouts --------
+      // No client writes ever.
+      match /payouts/{payoutId} {
+        allow read: if isMember(chamaId)
+                    && (resource.data.recipientUid == request.auth.uid || isTreasurerOrAdmin(chamaId));
+        allow write: if false;
+      }
+    }
+
+    // -------- transactions (top-level) --------
+    // Money in/out of the platform. Never client-writable.
+    match /transactions/{txId} {
+      allow read: if isSignedIn()
+                  && (resource.data.uid == request.auth.uid
+                      || isTreasurerOrAdmin(resource.data.chamaId));
+      allow write: if false;
+    }
+
+    // -------- ledger_entries (top-level, immutable) --------
+    match /ledger_entries/{entryId} {
+      // Members can read entries for their own chama, scoped to their member account.
+      // For a fuller treasurer view, an aggregated read endpoint would be added
+      // in Functions later.
+      allow read: if isSignedIn() && isTreasurerOrAdmin(resource.data.chamaId);
+      allow write: if false;
+    }
+
+    // -------- audit_log (top-level, immutable) --------
+    match /audit_log/{logId} {
+      // Treasurer/admin of the targeted chama can read; otherwise nobody.
+      allow read: if isSignedIn()
+                  && resource.data.target.kind == 'chama'
+                  && isTreasurerOrAdmin(resource.data.target.id);
+      allow write: if false;
+    }
+
+    // Default deny for anything not matched.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

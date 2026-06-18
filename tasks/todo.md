@@ -318,12 +318,14 @@ the emulator and all assertions pass. Failures here block "done."
 
 ---
 
-## Open questions to confirm before I code
+## Decisions locked (post-approval)
 
-1. **KYC fallback for Phase 1 (§6):** stub auto-approve in dev, or land users in `pending` + `restricted`? Lean toward `pending+restricted`.
-2. **Cycle scheduling source of truth:** are cycles materialized upfront at chama creation (deterministic, easy to query) or generated lazily by a scheduled function? Lean upfront for Phase 1 — predictability over storage cost.
-3. **Reconciliation window:** how long does a `transactions` row stay `pending` before the polling job escalates? Suggest 5 minutes for active polling, 24h before alerting humans.
-4. **Multi-currency future:** any chance Phase 2+ adds KES/TZS? If yes I'll keep `currency` on every money-bearing doc; if no I'll constant it. Lean keep-it.
+1. **KYC fallback:** Users land in `pending` + restricted mode. Restricted = can read chamas they're invited to, cannot contribute, cannot receive payouts, cannot file claims. Enforced in Cloud Functions (not rules — rules can't reasonably do KYC checks without extra lookups; keep them simple).
+2. **Cycle scheduling:** Materialized upfront at chama creation. For chamas with no fixed end (welfare), materialize a rolling 12-cycle window and have a scheduled function extend it.
+3. **Reconciliation:** Scheduled poll every 5 minutes for any `transactions.state == 'pending'`; write to `audit_log` + alert (via a `kycReviewer`/`opsAlerts` channel — concrete delivery is Phase 2) when a row exceeds 24h pending.
+4. **Currency field:** Kept on every money-bearing doc (`chama`, `cycle`, `contribution`, `payout`, `transaction`, `ledger_entry`). Engine treats it as opaque; Phase 1 only ever populates `'UGX'`.
+5. **KYC scope:** Full plumbing now — signed-URL upload function, storage rules, audit, restricted-mode middleware in Cloud Functions.
+6. **Permissions granted by user:** install npm deps as needed, run Firebase emulator in-session to execute rules tests.
 
 ---
 

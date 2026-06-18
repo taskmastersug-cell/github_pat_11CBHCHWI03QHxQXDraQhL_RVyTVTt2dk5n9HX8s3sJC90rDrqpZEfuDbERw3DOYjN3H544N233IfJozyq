@@ -1,0 +1,20 @@
+rules_version = '2';
+
+// RoundPay — Storage rules
+// KYC selfie uploads are gated by signed URLs minted by a Cloud Function.
+// Direct client writes to /kyc/** are denied. Reads are restricted to users
+// with a custom claim 'kycReviewer' (admin app).
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /kyc/{uid}/{file=**} {
+      allow read: if request.auth != null
+                  && (request.auth.uid == uid
+                      || request.auth.token.kycReviewer == true);
+      allow write: if false;
+    }
+    match /{path=**} {
+      allow read, write: if false;
+    }
+  }
+}

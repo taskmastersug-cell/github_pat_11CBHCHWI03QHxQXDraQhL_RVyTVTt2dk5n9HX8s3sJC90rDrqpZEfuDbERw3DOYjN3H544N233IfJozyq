@@ -1,0 +1,28 @@
+{
+  "name": "roundpay",
+  "private": true,
+  "version": "0.1.0",
+  "description": "RoundPay — group savings (chama) app for Uganda",
+  "workspaces": [
+    "packages/*",
+    "apps/*",
+    "functions"
+  ],
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "scripts": {
+    "build": "tsc -b packages/shared functions",
+    "typecheck": "tsc -b packages/shared functions --noEmit",
+    "test": "npm run test --workspaces --if-present",
+    "test:shared": "npm run test --workspace @roundpay/shared",
+    "test:rules": "npm run test:rules --workspace functions",
+    "emulator": "firebase emulators:start --only firestore,auth,storage",
+    "clean": "tsc -b packages/shared functions --clean && rimraf 'packages/*/dist' 'functions/lib'"
+  },
+  "devDependencies": {
+    "rimraf": "^5.0.5",
+    "typescript": "^5.4.5",
+    "firebase-tools": "^13.7.0"
+  }
+}
