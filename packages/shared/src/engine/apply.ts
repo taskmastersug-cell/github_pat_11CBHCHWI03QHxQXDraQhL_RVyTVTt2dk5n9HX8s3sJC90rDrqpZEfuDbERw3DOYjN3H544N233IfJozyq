@@ -5,24 +5,27 @@ import type { EngineContext, StateUpdate } from './context.js';
 import { handleContributionPaid } from './policies/contribution.js';
 import { handleCycleClosed } from './policies/cycleClose.js';
 import {
-  handleBidPlaced, handleClaimApproved, handleMaturityReached,
+  handleBidPlaced, handleBidWindowClosed, handleClaimApproved, handleMaturityReached,
 } from './policies/claimApproval.js';
+import { handleMemberExit } from './policies/memberExit.js';
 
 export interface EngineResult {
   readonly postings: readonly Posting[];
   readonly stateUpdate: StateUpdate;
 }
 
-// applyEvent is the only entry point. No branching on chama.type — branching
+// applyEvent is the only entry point. No branching on chama.type — dispatch
 // is by event.kind, and within each handler the policy registry is consulted.
 export function applyEvent(event: RoundPayEvent, ctx: EngineContext): EngineResult {
   let result: EngineResult;
   switch (event.kind) {
-    case 'contributionPaid': result = handleContributionPaid(event, ctx); break;
-    case 'bidPlaced':        result = handleBidPlaced(event, ctx); break;
-    case 'cycleClosed':      result = handleCycleClosed(event, ctx); break;
-    case 'maturityReached':  result = handleMaturityReached(event, ctx); break;
-    case 'claimApproved':    result = handleClaimApproved(event, ctx); break;
+    case 'contributionPaid':  result = handleContributionPaid(event, ctx); break;
+    case 'bidPlaced':         result = handleBidPlaced(event, ctx); break;
+    case 'bidWindowClosed':   result = handleBidWindowClosed(event, ctx); break;
+    case 'cycleClosed':       result = handleCycleClosed(event, ctx); break;
+    case 'maturityReached':   result = handleMaturityReached(event, ctx); break;
+    case 'claimApproved':     result = handleClaimApproved(event, ctx); break;
+    case 'memberExit':        result = handleMemberExit(event, ctx); break;
   }
   if (result.postings.length > 0) assertBalanced(result.postings);
   return result;

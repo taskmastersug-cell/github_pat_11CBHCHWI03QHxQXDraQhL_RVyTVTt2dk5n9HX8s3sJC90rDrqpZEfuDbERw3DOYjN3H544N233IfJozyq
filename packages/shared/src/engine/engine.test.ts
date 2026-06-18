@@ -248,6 +248,102 @@ describe('engine — fixed savings maturity', () => {
   });
 });
 
+describe('engine — bid window enforcement', () => {
+  it('rejects bidPlaced after biddingClosesAt', () => {
+    const ctx: EngineContext = {
+      chama: chama(),
+      activeMemberships: [membership('alice')],
+      cycle: cycle({ state: 'bidding', biddingClosesAt: 100 } as Partial<Cycle>),
+      currency: 'UGX',
+      now: 200,
+    };
+    assert.throws(() => applyEvent({
+      kind: 'bidPlaced', chamaId: C, cycleId: 'cyc1' as CycleId,
+      bidId: 'b1' as BidId, uid: U('alice'), discount: money(10_000), at: 200,
+    }, ctx), /bid window/);
+  });
+
+  it('rejects bidPlaced when cycle is not in bidding state', () => {
+    const ctx: EngineContext = {
+      chama: chama(),
+      activeMemberships: [membership('alice')],
+      cycle: cycle({ state: 'open' }),
+      currency: 'UGX',
+      now: 50,
+    };
+    assert.throws(() => applyEvent({
+      kind: 'bidPlaced', chamaId: C, cycleId: 'cyc1' as CycleId,
+      bidId: 'b1' as BidId, uid: U('alice'), discount: money(10_000), at: 50,
+    }, ctx), /not 'bidding'/);
+  });
+
+  it('bidWindowClosed transitions bidding -> closing', () => {
+    const ctx: EngineContext = {
+      chama: chama(),
+      activeMemberships: [membership('alice')],
+      cycle: cycle({ state: 'bidding' }),
+      currency: 'UGX',
+      now: 200,
+    };
+    const res = applyEvent({
+      kind: 'bidWindowClosed', chamaId: C, cycleId: 'cyc1' as CycleId, at: 200,
+    }, ctx);
+    assert.equal(res.stateUpdate.cyclePatch?.state, 'closing');
+  });
+});
+
+describe('engine — memberExit', () => {
+  it('refunds stake for fixed-savings exit', () => {
+    const c = chama({
+      type: 'fixedSavings',
+      policies: PHASE1_PRESETS.fixedSavings(money(50_000), 10, 999_999),
+    });
+    const stakes = new Map([[U('alice'), money(150_000)]]);
+    const ctx: EngineContext = {
+      chama: c,
+      activeMemberships: [membership('alice'), membership('bob')],
+      currency: 'UGX', now: 100,
+      memberStakes: stakes,
+    };
+    const res = applyEvent({
+      kind: 'memberExit', chamaId: C, uid: U('alice'), at: 100,
+    }, ctx);
+    assert.deepEqual(res.stateUpdate.payouts, [
+      { recipientUid: 'alice', amount: 150_000 },
+    ]);
+  });
+
+  it('refunds zero for welfare exit', () => {
+    const c = chama({
+      type: 'welfare',
+      policies: PHASE1_PRESETS.welfare(money(10_000)),
+    });
+    const ctx: EngineContext = {
+      chama: c,
+      activeMemberships: [membership('alice')],
+      currency: 'UGX', now: 1,
+      memberStakes: new Map([[U('alice'), money(500_000)]]),
+    };
+    const res = applyEvent({
+      kind: 'memberExit', chamaId: C, uid: U('alice'), at: 1,
+    }, ctx);
+    assert.deepEqual(res.stateUpdate.payouts, []);
+  });
+
+  it('blocks merry-go-round exit mid-cycle', () => {
+    const ctx: EngineContext = {
+      chama: chama(),
+      activeMemberships: [membership('alice')],
+      cycle: cycle({ state: 'bidding' }),
+      currency: 'UGX', now: 50,
+      memberStakes: new Map([[U('alice'), money(50_000)]]),
+    };
+    assert.throws(() => applyEvent({
+      kind: 'memberExit', chamaId: C, uid: U('alice'), at: 50,
+    }, ctx), /in flight/);
+  });
+});
+
 describe('ledger invariants', () => {
   it('assertBalanced rejects unbalanced postings', () => {
     assert.throws(() => assertBalanced([

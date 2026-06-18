@@ -74,6 +74,7 @@ export interface Cycle {
   index: number;
   opensAt: number;
   closesAt: number;
+  biddingClosesAt?: number; // required for discountBid chamas
   state: CycleState;
   expectedAmount: Money;
   pool: Money;
@@ -113,7 +114,7 @@ export interface Claim {
   reason: string;
   amountRequested: Money;
   currency: CurrencyCode;
-  evidenceRef?: string;
+  evidenceRef: string; // required as of Phase 2
   state: ClaimState;
   reviewerUid?: UserId;
   reviewedAt?: number;

@@ -136,11 +136,34 @@ describe('rules — financial collections deny-all', () => {
 });
 
 describe('rules — bids', () => {
-  it('member can create a bid for self during bidding state', async () => {
+  it('member with kycApproved can create a bid for self during bidding state', async () => {
     const env = await getEnv();
     await seedChama(env, CHAMA_ID, [{ uid: 'alice', role: 'member' }], { cycleState: 'bidding' });
-    const alice = env.authenticatedContext('alice');
+    const alice = env.authenticatedContext('alice', { kycApproved: true });
     await assertSucceeds(alice.firestore().collection('chamas').doc(CHAMA_ID)
+      .collection('cycles').doc('cyc1').collection('bids').doc('b1').set({
+        bidId: 'b1', cycleId: 'cyc1', chamaId: CHAMA_ID,
+        uid: 'alice', discount: 10_000, placedAt: 0, status: 'active',
+      }));
+  });
+
+  it('member without kycApproved cannot create a bid', async () => {
+    const env = await getEnv();
+    await seedChama(env, CHAMA_ID, [{ uid: 'alice', role: 'member' }], { cycleState: 'bidding' });
+    const alice = env.authenticatedContext('alice'); // no kycApproved claim
+    await assertFails(alice.firestore().collection('chamas').doc(CHAMA_ID)
+      .collection('cycles').doc('cyc1').collection('bids').doc('b1').set({
+        bidId: 'b1', cycleId: 'cyc1', chamaId: CHAMA_ID,
+        uid: 'alice', discount: 10_000, placedAt: 0, status: 'active',
+      }));
+  });
+
+  it('member cannot bid after biddingClosesAt', async () => {
+    const env = await getEnv();
+    await seedChama(env, CHAMA_ID, [{ uid: 'alice', role: 'member' }],
+      { cycleState: 'bidding', biddingClosesAt: 1 }); // long past
+    const alice = env.authenticatedContext('alice', { kycApproved: true });
+    await assertFails(alice.firestore().collection('chamas').doc(CHAMA_ID)
       .collection('cycles').doc('cyc1').collection('bids').doc('b1').set({
         bidId: 'b1', cycleId: 'cyc1', chamaId: CHAMA_ID,
         uid: 'alice', discount: 10_000, placedAt: 0, status: 'active',
@@ -152,7 +175,7 @@ describe('rules — bids', () => {
     await seedChama(env, CHAMA_ID, [
       { uid: 'alice', role: 'member' }, { uid: 'bob', role: 'member' },
     ], { cycleState: 'bidding' });
-    const alice = env.authenticatedContext('alice');
+    const alice = env.authenticatedContext('alice', { kycApproved: true });
     await assertFails(alice.firestore().collection('chamas').doc(CHAMA_ID)
       .collection('cycles').doc('cyc1').collection('bids').doc('b1').set({
         bidId: 'b1', cycleId: 'cyc1', chamaId: CHAMA_ID,
@@ -163,7 +186,7 @@ describe('rules — bids', () => {
   it('member cannot bid when cycle is not in bidding state', async () => {
     const env = await getEnv();
     await seedChama(env, CHAMA_ID, [{ uid: 'alice', role: 'member' }], { cycleState: 'open' });
-    const alice = env.authenticatedContext('alice');
+    const alice = env.authenticatedContext('alice', { kycApproved: true });
     await assertFails(alice.firestore().collection('chamas').doc(CHAMA_ID)
       .collection('cycles').doc('cyc1').collection('bids').doc('b1').set({
         bidId: 'b1', cycleId: 'cyc1', chamaId: CHAMA_ID,
@@ -178,7 +201,7 @@ describe('rules — bids', () => {
       bidId: 'b1', cycleId: 'cyc1', chamaId: CHAMA_ID,
       uid: 'alice', discount: 10_000, placedAt: 0, status: 'active',
     });
-    const alice = env.authenticatedContext('alice');
+    const alice = env.authenticatedContext('alice', { kycApproved: true });
     await assertSucceeds(alice.firestore().collection('chamas').doc(CHAMA_ID)
       .collection('cycles').doc('cyc1').collection('bids').doc('b1').update({ status: 'withdrawn' }));
   });
@@ -190,32 +213,61 @@ describe('rules — bids', () => {
       bidId: 'b1', cycleId: 'cyc1', chamaId: CHAMA_ID,
       uid: 'alice', discount: 10_000, placedAt: 0, status: 'active',
     });
-    const alice = env.authenticatedContext('alice');
+    const alice = env.authenticatedContext('alice', { kycApproved: true });
     await assertFails(alice.firestore().collection('chamas').doc(CHAMA_ID)
       .collection('cycles').doc('cyc1').collection('bids').doc('b1').update({ status: 'won' }));
   });
 });
 
 describe('rules — claims', () => {
-  it('member can file a claim for self in submitted state', async () => {
+  it('kyc-approved member can file a claim with evidenceRef', async () => {
     const env = await getEnv();
     await seedChama(env, CHAMA_ID, [{ uid: 'alice', role: 'member' }]);
-    const alice = env.authenticatedContext('alice');
+    const alice = env.authenticatedContext('alice', { kycApproved: true });
     await assertSucceeds(alice.firestore().collection('chamas').doc(CHAMA_ID)
       .collection('claims').doc('cl1').set({
         claimId: 'cl1', chamaId: CHAMA_ID, uid: 'alice',
-        reason: 'Sick', amountRequested: 100_000, currency: 'UGX', state: 'submitted',
+        reason: 'Sick', amountRequested: 100_000, currency: 'UGX',
+        evidenceRef: 'evidence/chama_test/alice-1.bin',
+        state: 'submitted',
       }));
   });
 
-  it('member cannot file a claim and pre-approve it', async () => {
+  it('member without kycApproved cannot file a claim', async () => {
     const env = await getEnv();
     await seedChama(env, CHAMA_ID, [{ uid: 'alice', role: 'member' }]);
     const alice = env.authenticatedContext('alice');
     await assertFails(alice.firestore().collection('chamas').doc(CHAMA_ID)
       .collection('claims').doc('cl1').set({
         claimId: 'cl1', chamaId: CHAMA_ID, uid: 'alice',
-        reason: 'Sick', amountRequested: 100_000, currency: 'UGX', state: 'approved',
+        reason: 'Sick', amountRequested: 100_000, currency: 'UGX',
+        evidenceRef: 'evidence/chama_test/alice-1.bin',
+        state: 'submitted',
+      }));
+  });
+
+  it('member cannot file a claim without evidenceRef', async () => {
+    const env = await getEnv();
+    await seedChama(env, CHAMA_ID, [{ uid: 'alice', role: 'member' }]);
+    const alice = env.authenticatedContext('alice', { kycApproved: true });
+    await assertFails(alice.firestore().collection('chamas').doc(CHAMA_ID)
+      .collection('claims').doc('cl1').set({
+        claimId: 'cl1', chamaId: CHAMA_ID, uid: 'alice',
+        reason: 'Sick', amountRequested: 100_000, currency: 'UGX',
+        state: 'submitted',
+      }));
+  });
+
+  it('member cannot file a claim and pre-approve it', async () => {
+    const env = await getEnv();
+    await seedChama(env, CHAMA_ID, [{ uid: 'alice', role: 'member' }]);
+    const alice = env.authenticatedContext('alice', { kycApproved: true });
+    await assertFails(alice.firestore().collection('chamas').doc(CHAMA_ID)
+      .collection('claims').doc('cl1').set({
+        claimId: 'cl1', chamaId: CHAMA_ID, uid: 'alice',
+        reason: 'Sick', amountRequested: 100_000, currency: 'UGX',
+        evidenceRef: 'evidence/chama_test/alice-1.bin',
+        state: 'approved',
       }));
   });
 

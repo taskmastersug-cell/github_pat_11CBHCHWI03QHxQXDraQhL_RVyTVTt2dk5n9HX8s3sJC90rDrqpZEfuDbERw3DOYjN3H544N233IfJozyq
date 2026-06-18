@@ -7,7 +7,9 @@
     "build": "tsc -b",
     "clean": "tsc -b --clean",
     "test:rules": "node --test --import tsx 'test/rules/**/*.test.ts'",
-    "test": "npm run test:rules"
+    "test:providers": "node --test --import tsx 'test/providers/**/*.test.ts'",
+    "test:e2e": "node --test --import tsx 'test/e2e/**/*.test.ts'",
+    "test": "npm run test:providers && npm run test:rules && npm run test:e2e"
   },
   "dependencies": {
     "@roundpay/shared": "*",

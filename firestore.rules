@@ -31,6 +31,9 @@ service cloud.firestore {
     function isTreasurerOrAdmin(chamaId) {
       return hasRole(chamaId, 'treasurer') || hasRole(chamaId, 'admin');
     }
+    function isKycApproved() {
+      return isSignedIn() && request.auth.token.kycApproved == true;
+    }
 
     // -------- users --------
     // A user can read & update non-sensitive parts of their own profile.
@@ -78,14 +81,21 @@ service cloud.firestore {
         match /bids/{bidId} {
           allow read: if isMember(chamaId);
           // A member can create their OWN bid during cycle state == 'bidding'.
+          // Requires KYC approved. The bid window (biddingClosesAt) is also
+          // enforced server-side in placeBid; rules check it where present.
           allow create: if isMember(chamaId)
+                        && isKycApproved()
                         && request.resource.data.uid == request.auth.uid
                         && request.resource.data.chamaId == chamaId
                         && request.resource.data.cycleId == cycleId
                         && request.resource.data.status == 'active'
                         && request.resource.data.discount is int
                         && request.resource.data.discount >= 0
-                        && get(/databases/$(db)/documents/chamas/$(chamaId)/cycles/$(cycleId)).data.state == 'bidding';
+                        && get(/databases/$(db)/documents/chamas/$(chamaId)/cycles/$(cycleId)).data.state == 'bidding'
+                        && (
+                          !('biddingClosesAt' in get(/databases/$(db)/documents/chamas/$(chamaId)/cycles/$(cycleId)).data)
+                          || request.time.toMillis() <= get(/databases/$(db)/documents/chamas/$(chamaId)/cycles/$(cycleId)).data.biddingClosesAt
+                        );
           // Member may only withdraw their own active bid. Winner/loser
           // transitions are Functions-only.
           allow update: if isMember(chamaId)
@@ -111,12 +121,16 @@ service cloud.firestore {
         allow read: if isMember(chamaId)
                     && (resource.data.uid == request.auth.uid || isTreasurerOrAdmin(chamaId));
         // A member can file a claim for themselves, in 'submitted' state.
+        // Requires KYC approved and an evidence ref attached.
         allow create: if isMember(chamaId)
+                      && isKycApproved()
                       && request.resource.data.uid == request.auth.uid
                       && request.resource.data.chamaId == chamaId
                       && request.resource.data.state == 'submitted'
                       && request.resource.data.amountRequested is int
-                      && request.resource.data.amountRequested > 0;
+                      && request.resource.data.amountRequested > 0
+                      && request.resource.data.evidenceRef is string
+                      && request.resource.data.evidenceRef.size() > 0;
         // Approval/rejection/payment is Functions-only.
         allow update, delete: if false;
       }

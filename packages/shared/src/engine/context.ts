@@ -14,6 +14,9 @@ export interface EngineContext {
   readonly cycleContributedAmount?: Money;
   readonly currency: CurrencyCode;
   readonly now: number;
+  // Caller supplies per-member ledger balance (sum of all entries on
+  // `member:<uid>:<chamaId>` to date). Only required for memberExit.
+  readonly memberStakes?: ReadonlyMap<UserId, Money>;
 }
 
 export interface StateUpdate {

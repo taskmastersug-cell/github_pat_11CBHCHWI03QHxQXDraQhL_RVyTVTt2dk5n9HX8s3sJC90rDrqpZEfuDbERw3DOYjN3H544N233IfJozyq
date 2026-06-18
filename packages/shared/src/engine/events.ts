@@ -47,4 +47,16 @@ export type RoundPayEvent =
       amount: Money;
       approverUid: UserId;
       at: number;
+    }
+  | {
+      kind: 'bidWindowClosed';
+      chamaId: ChamaId;
+      cycleId: CycleId;
+      at: number;
+    }
+  | {
+      kind: 'memberExit';
+      chamaId: ChamaId;
+      uid: UserId;
+      at: number;
     };

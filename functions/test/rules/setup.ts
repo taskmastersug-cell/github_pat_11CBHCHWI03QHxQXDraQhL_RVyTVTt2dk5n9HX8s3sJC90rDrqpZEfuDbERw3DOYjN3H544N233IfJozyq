@@ -56,7 +56,7 @@ export async function seedChama(
   _env: RulesTestEnvironment,
   chamaId: string,
   members: Array<{ uid: string; role: 'member' | 'treasurer' | 'admin'; status?: 'active' | 'invited' | 'suspended' | 'exited' }>,
-  opts: { cycleState?: string } = {},
+  opts: { cycleState?: string; biddingClosesAt?: number } = {},
 ): Promise<void> {
   const db = admin();
   await db.collection('chamas').doc(chamaId).set({
@@ -81,6 +81,7 @@ export async function seedChama(
   if (opts.cycleState) {
     await db.collection('chamas').doc(chamaId).collection('cycles').doc('cyc1').set({
       cycleId: 'cyc1', chamaId, index: 0, opensAt: 0, closesAt: 9_999_999_999,
+      ...(opts.biddingClosesAt !== undefined ? { biddingClosesAt: opts.biddingClosesAt } : {}),
       state: opts.cycleState, expectedAmount: 50_000, pool: 0, currency: 'UGX',
     });
   }

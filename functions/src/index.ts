@@ -1,5 +1,26 @@
-// Phase 1: scaffold only. Concrete callable/HTTP/scheduled functions land in
-// Phase 2 alongside MoMo/Airtel adapters. The engine is wired here for shape.
-import { applyEvent } from '@roundpay/shared';
+// RoundPay Cloud Functions entrypoint. One export per deployable function so
+// `firebase deploy --only functions:<name>` works at granular scope.
 
-export const _engineImported = typeof applyEvent;
+import { initializeApp } from 'firebase-admin/app';
+initializeApp();
+
+// Callables
+export { submitKyc, mintKycUploadUrl, approveKyc } from './api/kyc.js';
+export { createChama, inviteMember, acceptInvite } from './api/chamas.js';
+export { initiateContribution } from './api/contributions.js';
+export { placeBid } from './api/bids.js';
+export { fileClaim, approveClaim, mintEvidenceUploadUrl, readEvidence } from './api/claims.js';
+export { requestExit } from './api/exit.js';
+
+// Webhooks
+export { mtnMomoWebhook, airtelMoneyWebhook } from './webhooks/http.js';
+
+// Auth triggers
+export { bootstrapUser } from './auth/onUserCreate.js';
+
+// Scheduled
+export {
+  reconcilePendingTransactions,
+  verifyChamaLedger,
+  closeMaturedCycles,
+} from './scheduled/reconcile.js';
