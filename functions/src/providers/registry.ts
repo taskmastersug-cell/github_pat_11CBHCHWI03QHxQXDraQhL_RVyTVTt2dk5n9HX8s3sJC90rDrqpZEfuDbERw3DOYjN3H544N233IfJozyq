@@ -4,10 +4,14 @@ import { ProviderConfigError } from './Provider.js';
 import { MockProvider } from './mockProvider.js';
 import { MtnMomoProvider } from './mtnMomo/MtnMomoProvider.js';
 import { AirtelMoneyProvider } from './airtelMoney/AirtelMoneyProvider.js';
+import { dryRunFetch } from './dryRunFetch.js';
 
-// Registry resolves a Provider enum to a concrete adapter. In Phase 2 the
-// default behavior in non-prod / test is the MockProvider; production reads
-// real adapter config from `firebase functions:secrets`.
+// Registry resolves a Provider enum to a concrete adapter. Behavior:
+// - ROUNDPAY_USE_MOCK_PROVIDERS=1 → MockProvider (in-process simulator)
+// - ROUNDPAY_DRY_RUN_PROVIDERS=1 → real adapter classes with dryRunFetch
+//   injected, so URL construction / signature math / response parsing all
+//   exercise the real code paths without making a network call.
+// - Otherwise → real adapters with real fetch (requires sandbox credentials).
 
 let cached: Map<Provider, ProviderAdapter> | null = null;
 
@@ -29,34 +33,48 @@ export function getProvider(name: Provider): ProviderAdapter {
 }
 
 function buildFromEnv(name: Provider): ProviderAdapter {
-  const useMock = process.env.ROUNDPAY_USE_MOCK_PROVIDERS === '1';
-  if (useMock) {
+  if (process.env.ROUNDPAY_USE_MOCK_PROVIDERS === '1') {
     const secret = process.env.MOCK_PROVIDER_WEBHOOK_SECRET ?? 'dev-secret';
     return new MockProvider(name, secret);
   }
+  const dryRun = process.env.ROUNDPAY_DRY_RUN_PROVIDERS === '1';
+  const env = dryRun ? envOrPlaceholder : requireEnv;
+  const fetchImpl = dryRun ? dryRunFetch : fetch;
+
   if (name === 'mtnMomo') {
-    return new MtnMomoProvider({
-      baseUrl: requireEnv('MTN_MOMO_BASE_URL'),
-      subscriptionKey: requireEnv('MTN_MOMO_SUBSCRIPTION_KEY'),
-      apiUserId: requireEnv('MTN_MOMO_API_USER_ID'),
-      apiKey: requireEnv('MTN_MOMO_API_KEY'),
-      callbackUrl: requireEnv('MTN_MOMO_CALLBACK_URL'),
-      webhookSecret: requireEnv('MTN_MOMO_WEBHOOK_SECRET'),
-      targetEnvironment: (process.env.MTN_MOMO_ENV ?? 'sandbox') as 'sandbox' | 'production',
-    });
+    return new MtnMomoProvider(
+      {
+        baseUrl: env('MTN_MOMO_BASE_URL', 'https://sandbox.momodeveloper.mtn.com'),
+        subscriptionKey: env('MTN_MOMO_SUBSCRIPTION_KEY', 'dry-run-subscription-key'),
+        apiUserId: env('MTN_MOMO_API_USER_ID', '00000000-0000-0000-0000-000000000000'),
+        apiKey: env('MTN_MOMO_API_KEY', 'dry-run-api-key'),
+        callbackUrl: env('MTN_MOMO_CALLBACK_URL', 'https://dry-run.example/webhook'),
+        webhookSecret: env('MTN_MOMO_WEBHOOK_SECRET', 'dry-run-webhook-secret'),
+        targetEnvironment: (process.env.MTN_MOMO_ENV ?? 'sandbox') as 'sandbox' | 'production',
+      },
+      fetchImpl,
+    );
   }
-  return new AirtelMoneyProvider({
-    baseUrl: requireEnv('AIRTEL_MONEY_BASE_URL'),
-    clientId: requireEnv('AIRTEL_MONEY_CLIENT_ID'),
-    clientSecret: requireEnv('AIRTEL_MONEY_CLIENT_SECRET'),
-    country: process.env.AIRTEL_MONEY_COUNTRY ?? 'UG',
-    currency: process.env.AIRTEL_MONEY_CURRENCY ?? 'UGX',
-    webhookSecret: requireEnv('AIRTEL_MONEY_WEBHOOK_SECRET'),
-  });
+  return new AirtelMoneyProvider(
+    {
+      baseUrl: env('AIRTEL_MONEY_BASE_URL', 'https://openapiuat.airtel.africa'),
+      clientId: env('AIRTEL_MONEY_CLIENT_ID', 'dry-run-client-id'),
+      clientSecret: env('AIRTEL_MONEY_CLIENT_SECRET', 'dry-run-client-secret'),
+      country: process.env.AIRTEL_MONEY_COUNTRY ?? 'UG',
+      currency: process.env.AIRTEL_MONEY_CURRENCY ?? 'UGX',
+      webhookSecret: env('AIRTEL_MONEY_WEBHOOK_SECRET', 'dry-run-webhook-secret'),
+    },
+    fetchImpl,
+  );
 }
 
-function requireEnv(name: string): string {
+type EnvResolver = (name: string, placeholder: string) => string;
+
+const requireEnv: EnvResolver = (name) => {
   const v = process.env[name];
   if (!v) throw new ProviderConfigError(`Missing required env: ${name}`);
   return v;
-}
+};
+
+const envOrPlaceholder: EnvResolver = (name, placeholder) =>
+  process.env[name] ?? placeholder;

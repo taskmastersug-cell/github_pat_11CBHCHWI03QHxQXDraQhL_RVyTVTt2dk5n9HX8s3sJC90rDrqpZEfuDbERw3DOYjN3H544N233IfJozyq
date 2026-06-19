@@ -71,7 +71,19 @@ production-grade tests.
   - `Screen.test.tsx` — renders children, ScrollView vs View based on `scroll` prop (3 tests)
 - [x] **Mobile tests: 10 → 23**; typecheck clean.
 
-## 6. Remaining for Phase 4
+## 6. Dry-run provider mode
+
+Live sandbox verification is blocked on credentials, so this lands a third
+provider mode that exercises the **real** MTN + Airtel adapter code (URL
+construction, OAuth flow, header math, body shape, response parsing) without
+making a network call. Closes ~80% of the verification value today.
+
+- [x] `functions/src/providers/dryRunFetch.ts` — host/path-pattern-matching `fetch` that returns canned, realistically-shaped responses for MoMo OAuth, requesttopay, disbursement transfer, query, plus Airtel OAuth, collection, disbursement, and payment-status. Unmatched calls return 501 so anything new fails loudly.
+- [x] Registry grows a third mode keyed off `ROUNDPAY_DRY_RUN_PROVIDERS=1`. When set, the real `MtnMomoProvider` / `AirtelMoneyProvider` are instantiated with `dryRunFetch` injected; missing env vars fall back to clearly-marked placeholders (`dry-run-subscription-key`, etc.).
+- [x] `functions/.env.example` documents the three modes (mock / dry-run / real).
+- [x] 4 new dry-run tests cover: MTN deposit accepted, MTN status-poll parsed as `confirmed`, Airtel deposit accepted, env-var override path. Provider suite: 16 → 20.
+
+## 7. Remaining for Phase 4
 
 - [ ] Live MTN + Airtel sandbox verification once creds land
 - [ ] Real Luganda translations (every key is keyed; just needs a translator)
