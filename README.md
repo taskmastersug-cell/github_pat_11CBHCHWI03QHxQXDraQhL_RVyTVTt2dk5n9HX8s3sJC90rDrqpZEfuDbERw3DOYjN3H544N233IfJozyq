@@ -47,7 +47,15 @@ engine and per-chama nightly in Functions.
 - [x] Scheduled jobs (reconciliation, ledger verifier, cycle close)
 - [x] 60/60 tests green: engine, providers, rules, end-to-end pipeline
 
-### Phase 3 deliverables (in progress)
+### Phase 4 deliverables (in progress)
+
+- [x] Mobile: place bid, claims (list + file with evidence), exit
+- [x] Admin (Next.js): sign-in, KYC reviewer queue, chamas list, chama detail with ledger health + claim approvals + evidence viewer
+- [ ] Live MTN + Airtel sandbox verification (gated on credentials)
+- [ ] FCM push notifications
+- [ ] Real Luganda translations
+
+### Phase 3 deliverables
 
 - [x] Expo mobile app: expo-router groups, theme, primitives, i18n
 - [x] Phone OTP sign-in flow

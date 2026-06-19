@@ -31,9 +31,19 @@ production-grade tests.
 - [x] Pure helper `lowestActiveDiscount` with 4 unit tests covering empty / pick-min / ignore-inactive / all-inactive
 - [x] 10 mobile jest tests pass; typecheck clean
 
-## 2. Remaining for Phase 4
+## 2. Admin (Next.js) MVP
 
-- [ ] Admin (Next.js) MVP: KYC reviewer queue + treasurer dashboard
+- [x] App Router shell with sidebar nav and email/password sign-in (treasurer / reviewer accounts)
+- [x] Firebase init (Auth + Firestore + Functions + Storage) with emulator detection via `NEXT_PUBLIC_USE_EMULATORS`
+- [x] Auth store reads the `kycReviewer` custom claim from the ID token; UI gates KYC actions on it
+- [x] `/` dashboard: KYC backlog count + chama count, links into each queue
+- [x] `/kyc` queue: lists `users` where `kyc.status == 'pending'`, approve/reject via `approveKyc` callable
+- [x] `/chamas` list with status tags
+- [x] `/chamas/[id]`: chama summary + active member count + per-account ledger totals + **balance invariant tag** (green = sum-to-zero, red = imbalanced). For welfare chamas, also shows submitted claims with "Load evidence" (calls `readEvidence` for a 5-min signed URL) and approve/reject (calls `approveClaim`)
+- [x] Pure `summarizeLedger` helper with 3 unit tests (empty / per-account aggregation / imbalance detection)
+- [x] Admin typecheck clean; 3 jest tests pass
+
+## 3. Remaining for Phase 4
 - [ ] Live MTN + Airtel sandbox verification once creds land
 - [ ] FCM push notifications (contribution confirmed, payout sent, claim status change, KYC approved)
 - [ ] Real Luganda translations (every key is keyed; just needs a translator)
