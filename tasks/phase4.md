@@ -53,12 +53,17 @@ production-grade tests.
 - [x] Mobile registers tokens via `expo-notifications` once KYC is approved; foreground handler shows the alert
 - [x] Backend builds clean; shared 20/20 + provider 16/16 + mobile 10/10 + admin 3/3 tests pass
 
-## 4. Remaining for Phase 4
+## 4. Notification deep linking
+
+- [x] Pure `routeForNotification(data)` in shared maps every notification kind to an expo-router path (or null if malformed). 7 unit tests cover all kinds + missing-field + unknown-kind paths.
+- [x] `useNotificationDeepLinks(enabled)` hook in mobile handles both cold-start taps (`getLastNotificationResponseAsync`) and runtime taps (`addNotificationResponseReceivedListener`).
+- [x] Wired into `AuthGate` and gated on `kyc.status === 'approved'` so we don't bounce off the auth guard when an unverified user taps a notification.
+
+## 5. Remaining for Phase 4
 
 - [ ] Live MTN + Airtel sandbox verification once creds land
 - [ ] Real Luganda translations (every key is keyed; just needs a translator)
 - [ ] RN component tests via jest-expo (preset module resolution under workspaces still flaky)
-- [ ] Deep linking from notification taps into the relevant cycle/claim screen (data payload is there; router wiring is not)
 
 ---
 

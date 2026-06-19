@@ -38,3 +38,4 @@ export { buildNotification } from './notifications/messages.js';
 export type {
   NotificationKind, NotificationInput, BuiltNotification,
 } from './notifications/messages.js';
+export { routeForNotification } from './notifications/routing.js';

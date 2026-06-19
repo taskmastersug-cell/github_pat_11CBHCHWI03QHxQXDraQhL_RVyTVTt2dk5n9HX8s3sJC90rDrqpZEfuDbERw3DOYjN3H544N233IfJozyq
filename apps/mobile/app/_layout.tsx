@@ -8,6 +8,7 @@ import { useUserDoc } from '../src/data/userDoc';
 import { initI18n } from '../src/i18n';
 import { theme } from '../src/ui/theme';
 import { registerPushNotifications, setForegroundHandler } from '../src/notifications/register';
+import { useNotificationDeepLinks } from '../src/notifications/deepLink';
 
 export default function RootLayout() {
   const [ready, setReady] = useState(false);
@@ -35,11 +36,14 @@ function AuthGate() {
 
   useEffect(() => { init(); setForegroundHandler(); }, [init]);
 
+  const kycApproved = profile?.kyc?.status === 'approved';
   useEffect(() => {
-    if (profile?.kyc?.status === 'approved') {
+    if (kycApproved) {
       registerPushNotifications().catch(() => {});
     }
-  }, [profile?.kyc?.status]);
+  }, [kycApproved]);
+
+  useNotificationDeepLinks(kycApproved);
 
   useEffect(() => {
     if (!authReady) return;
