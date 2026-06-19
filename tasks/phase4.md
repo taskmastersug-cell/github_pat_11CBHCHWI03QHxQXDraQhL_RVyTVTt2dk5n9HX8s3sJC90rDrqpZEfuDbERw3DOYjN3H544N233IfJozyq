@@ -59,11 +59,22 @@ production-grade tests.
 - [x] `useNotificationDeepLinks(enabled)` hook in mobile handles both cold-start taps (`getLastNotificationResponseAsync`) and runtime taps (`addNotificationResponseReceivedListener`).
 - [x] Wired into `AuthGate` and gated on `kyc.status === 'approved'` so we don't bounce off the auth guard when an unverified user taps a notification.
 
-## 5. Remaining for Phase 4
+## 5. RN component test infrastructure
+
+- [x] Skipped jest-expo entirely (its preset module resolution is too fragile under workspace hoisting). Replaced with a minimal `__mocks__/react-native.js` that exposes host elements as plain strings, plus a setup file that stubs every Expo native module our code touches transitively.
+- [x] Tried React Native Testing Library v12 — its host-component autodetect couldn't agree with our mock. Reverted to vanilla `react-test-renderer`, which works fine against host-element strings.
+- [x] Added `src/test/host.ts` — a typed shim around `findByType` that accepts host strings (`'Pressable'`, `'Text'`, etc.) without TypeScript complaining about `ElementType`.
+- [x] New component tests:
+  - `Button.test.tsx` — renders label, fires onPress, disabled / loading short-circuit press, shows ActivityIndicator while loading (5 tests)
+  - `Field.test.tsx` — renders label, hides/shows error line, forwards onChangeText (4 tests)
+  - `Money.test.tsx` — formatter coverage + renders the formatted amount in a Text node (4 tests)
+  - `Screen.test.tsx` — renders children, ScrollView vs View based on `scroll` prop (3 tests)
+- [x] **Mobile tests: 10 → 23**; typecheck clean.
+
+## 6. Remaining for Phase 4
 
 - [ ] Live MTN + Airtel sandbox verification once creds land
 - [ ] Real Luganda translations (every key is keyed; just needs a translator)
-- [ ] RN component tests via jest-expo (preset module resolution under workspaces still flaky)
 
 ---
 

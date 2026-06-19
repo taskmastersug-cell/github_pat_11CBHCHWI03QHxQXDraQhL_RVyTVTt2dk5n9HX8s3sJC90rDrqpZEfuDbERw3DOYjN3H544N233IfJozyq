@@ -1,6 +1,10 @@
+import React from 'react';
+import TestRenderer from 'react-test-renderer';
 import { formatMoney, money } from '@roundpay/shared';
+import { Money } from '../Money';
+import { host } from '../../test/host';
 
-describe('Money formatting (shared helper used by <Money/>)', () => {
+describe('Money formatting helper', () => {
   it('formats integer UGX with grouping for en locale', () => {
     expect(formatMoney(money(250_000), 'UGX', 'en')).toBe('UGX 250,000');
   });
@@ -11,5 +15,13 @@ describe('Money formatting (shared helper used by <Money/>)', () => {
 
   it('formats zero', () => {
     expect(formatMoney(money(0), 'UGX', 'en')).toBe('UGX 0');
+  });
+});
+
+describe('<Money/>', () => {
+  it('renders the formatted amount inside a Text node', () => {
+    const r = TestRenderer.create(<Money amount={250_000} />);
+    const text = host(r.root).findByType('Text');
+    expect(text.children).toContain('UGX 250,000');
   });
 });
