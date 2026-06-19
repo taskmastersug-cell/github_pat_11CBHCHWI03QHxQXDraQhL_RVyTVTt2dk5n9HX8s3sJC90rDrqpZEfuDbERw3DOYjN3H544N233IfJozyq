@@ -59,6 +59,40 @@
     "success": "Payment received. Thank you!",
     "failed": "Payment did not complete."
   },
+  "bid": {
+    "title": "Place a bid",
+    "subtitle": "Bid the discount you'd accept off the pool to win this cycle.",
+    "discountLabel": "Discount (UGX)",
+    "submit": "Place bid",
+    "open": "Bidding open",
+    "closed": "Bidding closed",
+    "myBid": "Your bid",
+    "winning": "Winning",
+    "outbid": "Outbid",
+    "noBids": "No bids yet."
+  },
+  "claim": {
+    "listTitle": "Claims",
+    "newTitle": "File a claim",
+    "reasonLabel": "Reason",
+    "amountLabel": "Amount requested",
+    "evidenceLabel": "Evidence",
+    "addEvidence": "Add a photo or document",
+    "submit": "Submit claim",
+    "empty": "No claims filed yet.",
+    "stateSubmitted": "Submitted",
+    "stateApproved": "Approved",
+    "stateRejected": "Rejected",
+    "statePaid": "Paid",
+    "fileNew": "File a new claim",
+    "evidenceMissing": "Please attach evidence."
+  },
+  "exit": {
+    "title": "Leave this chama",
+    "warning": "Your stake (computed from the ledger) will be refunded to your mobile money. Bids in progress are forfeited.",
+    "confirm": "Request exit",
+    "pending": "Exit request submitted."
+  },
   "errors": {
     "generic": "Something went wrong. Please try again.",
     "invalidPhone": "Enter a valid phone number.",

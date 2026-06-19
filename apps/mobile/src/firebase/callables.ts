@@ -26,3 +26,20 @@ export const initiateContribution = call<
 >('initiateContribution');
 
 export const acceptInvite = call<{ chamaId: string; token: string }, { ok: true }>('acceptInvite');
+
+export const placeBid = call<
+  { chamaId: string; cycleId: string; discount: number },
+  { bidId: string }
+>('placeBid');
+
+export const fileClaim = call<
+  { chamaId: string; reason: string; amountRequested: number; evidenceRef: string },
+  { claimId: string }
+>('fileClaim');
+
+export const mintEvidenceUploadUrl = call<
+  { chamaId: string },
+  { url: string; path: string }
+>('mintEvidenceUploadUrl');
+
+export const requestExit = call<{ chamaId: string }, { ok: true }>('requestExit');

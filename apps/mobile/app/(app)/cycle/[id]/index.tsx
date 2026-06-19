@@ -1,16 +1,16 @@
 import React, { useState } from 'react';
 import { Text, View, StyleSheet, ActivityIndicator } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { Stack, useLocalSearchParams } from 'expo-router';
-import { Screen } from '../../../src/ui/Screen';
-import { theme } from '../../../src/ui/theme';
-import { Money } from '../../../src/ui/Money';
-import { Button } from '../../../src/ui/Button';
-import { Field } from '../../../src/ui/Field';
-import { useCycle, useMyContribution } from '../../../src/data/chamas';
-import { useTransaction } from '../../../src/data/transactions';
-import { useAuth } from '../../../src/stores/auth';
-import { initiateContribution } from '../../../src/firebase/callables';
+import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
+import { Screen } from '../../../../src/ui/Screen';
+import { theme } from '../../../../src/ui/theme';
+import { Money } from '../../../../src/ui/Money';
+import { Button } from '../../../../src/ui/Button';
+import { Field } from '../../../../src/ui/Field';
+import { useCycle, useMyContribution } from '../../../../src/data/chamas';
+import { useTransaction } from '../../../../src/data/transactions';
+import { useAuth } from '../../../../src/stores/auth';
+import { initiateContribution } from '../../../../src/firebase/callables';
 
 const STATUS_KEYS: Record<string, string> = {
   pending: 'cycle.statusPending',
@@ -22,6 +22,7 @@ const STATUS_KEYS: Record<string, string> = {
 export default function CycleDetailScreen() {
   const { t } = useTranslation();
   const { id, chamaId } = useLocalSearchParams<{ id: string; chamaId: string }>();
+  const router = useRouter();
   const uid = useAuth((s) => s.user?.uid ?? null);
   const cycle = useCycle(chamaId ?? null, id ?? null);
   const contribution = useMyContribution(chamaId ?? null, id ?? null, uid);
@@ -67,6 +68,14 @@ export default function CycleDetailScreen() {
           <Money amount={contribution.amount} style={styles.amount} />
           <Text style={styles.meta}>{t(STATUS_KEYS[contribution.state] ?? '')}</Text>
         </View>
+      ) : null}
+
+      {cycle?.state === 'bidding' ? (
+        <Button
+          label={t('bid.title')}
+          variant="secondary"
+          onPress={() => router.push(`/(app)/cycle/${id}/bid?chamaId=${chamaId}`)}
+        />
       ) : null}
 
       {canContribute && !txId ? (

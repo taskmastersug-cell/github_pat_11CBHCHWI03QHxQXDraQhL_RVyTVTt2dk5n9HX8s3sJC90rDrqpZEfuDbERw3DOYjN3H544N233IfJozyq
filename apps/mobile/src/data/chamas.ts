@@ -3,7 +3,7 @@ import {
   collection, collectionGroup, doc, onSnapshot, query, where, orderBy,
 } from 'firebase/firestore';
 import { firebase } from '../firebase/init';
-import type { Chama, Membership, Cycle, Contribution } from '@roundpay/shared';
+import type { Chama, Membership, Cycle, Contribution, Bid, Claim } from '@roundpay/shared';
 
 export function useMyChamas(uid: string | null) {
   const [chamas, setChamas] = useState<Chama[]>([]);
@@ -75,6 +75,51 @@ export function useCycle(chamaId: string | null, cycleId: string | null) {
     });
   }, [chamaId, cycleId]);
   return cycle;
+}
+
+export function useBids(chamaId: string | null, cycleId: string | null) {
+  const [bids, setBids] = useState<Bid[]>([]);
+  useEffect(() => {
+    if (!chamaId || !cycleId) return;
+    const { db } = firebase();
+    const q = query(
+      collection(db, 'chamas', chamaId, 'cycles', cycleId, 'bids'),
+      orderBy('placedAt', 'asc'),
+    );
+    return onSnapshot(q, (snap) => {
+      setBids(snap.docs.map((d) => d.data() as Bid));
+    });
+  }, [chamaId, cycleId]);
+  return bids;
+}
+
+export function useMyMembership(chamaId: string | null, uid: string | null) {
+  const [membership, setMembership] = useState<Membership | null>(null);
+  useEffect(() => {
+    if (!chamaId || !uid) return;
+    const { db } = firebase();
+    return onSnapshot(
+      doc(db, 'chamas', chamaId, 'memberships', `${chamaId}_${uid}`),
+      (s) => setMembership(s.exists() ? (s.data() as Membership) : null),
+    );
+  }, [chamaId, uid]);
+  return membership;
+}
+
+export function useClaims(chamaId: string | null) {
+  const [claims, setClaims] = useState<Claim[]>([]);
+  useEffect(() => {
+    if (!chamaId) return;
+    const { db } = firebase();
+    const q = query(
+      collection(db, 'chamas', chamaId, 'claims'),
+      orderBy('claimId', 'desc'),
+    );
+    return onSnapshot(q, (snap) => {
+      setClaims(snap.docs.map((d) => d.data() as Claim));
+    });
+  }, [chamaId]);
+  return claims;
 }
 
 export function useMyContribution(chamaId: string | null, cycleId: string | null, uid: string | null) {

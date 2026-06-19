@@ -59,6 +59,40 @@
     "success": "[LG] Payment received. Thank you!",
     "failed": "[LG] Payment did not complete."
   },
+  "bid": {
+    "title": "[LG] Place a bid",
+    "subtitle": "[LG] Bid the discount you'd accept off the pool to win this cycle.",
+    "discountLabel": "[LG] Discount (UGX)",
+    "submit": "[LG] Place bid",
+    "open": "[LG] Bidding open",
+    "closed": "[LG] Bidding closed",
+    "myBid": "[LG] Your bid",
+    "winning": "[LG] Winning",
+    "outbid": "[LG] Outbid",
+    "noBids": "[LG] No bids yet."
+  },
+  "claim": {
+    "listTitle": "[LG] Claims",
+    "newTitle": "[LG] File a claim",
+    "reasonLabel": "[LG] Reason",
+    "amountLabel": "[LG] Amount requested",
+    "evidenceLabel": "[LG] Evidence",
+    "addEvidence": "[LG] Add a photo or document",
+    "submit": "[LG] Submit claim",
+    "empty": "[LG] No claims filed yet.",
+    "stateSubmitted": "[LG] Submitted",
+    "stateApproved": "[LG] Approved",
+    "stateRejected": "[LG] Rejected",
+    "statePaid": "[LG] Paid",
+    "fileNew": "[LG] File a new claim",
+    "evidenceMissing": "[LG] Please attach evidence."
+  },
+  "exit": {
+    "title": "[LG] Leave this chama",
+    "warning": "[LG] Your stake (computed from the ledger) will be refunded to your mobile money. Bids in progress are forfeited.",
+    "confirm": "[LG] Request exit",
+    "pending": "[LG] Exit request submitted."
+  },
   "errors": {
     "generic": "[LG] Something went wrong. Please try again.",
     "invalidPhone": "[LG] Enter a valid phone number.",

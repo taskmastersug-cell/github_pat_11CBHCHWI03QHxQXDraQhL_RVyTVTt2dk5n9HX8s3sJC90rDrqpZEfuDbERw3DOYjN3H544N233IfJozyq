@@ -2,10 +2,11 @@ import React from 'react';
 import { Text, View, FlatList, Pressable, StyleSheet } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
-import { Screen } from '../../../src/ui/Screen';
-import { theme } from '../../../src/ui/theme';
-import { Money } from '../../../src/ui/Money';
-import { useChama, useCycles } from '../../../src/data/chamas';
+import { Screen } from '../../../../src/ui/Screen';
+import { theme } from '../../../../src/ui/theme';
+import { Money } from '../../../../src/ui/Money';
+import { Button } from '../../../../src/ui/Button';
+import { useChama, useCycles } from '../../../../src/data/chamas';
 
 export default function ChamaDetailScreen() {
   const { t } = useTranslation();
@@ -22,6 +23,20 @@ export default function ChamaDetailScreen() {
           <Text style={styles.title}>{chama.name}</Text>
           <Text style={styles.meta}>{t('chama.memberCount', { count: chama.memberCount })}</Text>
           <Money amount={chama.contributionAmount} style={styles.amount} />
+          <View style={styles.actions}>
+            {chama.type === 'welfare' ? (
+              <Button
+                label={t('claim.listTitle')}
+                variant="secondary"
+                onPress={() => router.push(`/(app)/chama/${id}/claims`)}
+              />
+            ) : null}
+            <Button
+              label={t('exit.title')}
+              variant="secondary"
+              onPress={() => router.push(`/(app)/chama/${id}/exit`)}
+            />
+          </View>
         </View>
       ) : null}
       <FlatList
@@ -47,6 +62,7 @@ export default function ChamaDetailScreen() {
 
 const styles = StyleSheet.create({
   header: { gap: theme.space.xs },
+  actions: { flexDirection: 'row', gap: theme.space.sm, marginTop: theme.space.sm },
   title: { fontSize: theme.font.h1, fontWeight: '700', color: theme.color.text },
   card: {
     backgroundColor: theme.color.surface,
