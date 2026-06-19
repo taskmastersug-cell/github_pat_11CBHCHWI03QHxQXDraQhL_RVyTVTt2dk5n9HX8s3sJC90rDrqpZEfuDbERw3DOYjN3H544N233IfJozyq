@@ -24,6 +24,7 @@ export const UserDocSchema = z.object({
   }),
   createdAt: z.number(),
   disabled: z.boolean(),
+  fcmTokens: z.array(z.string().min(1)).optional(),
 });
 
 const ContributionPolicy = z.discriminatedUnion('kind', [

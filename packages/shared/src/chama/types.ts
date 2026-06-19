@@ -42,6 +42,7 @@ export interface UserDoc {
   };
   createdAt: number;
   disabled: boolean;
+  fcmTokens?: string[];
 }
 
 export interface Chama {

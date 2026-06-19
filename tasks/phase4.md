@@ -43,11 +43,22 @@ production-grade tests.
 - [x] Pure `summarizeLedger` helper with 3 unit tests (empty / per-account aggregation / imbalance detection)
 - [x] Admin typecheck clean; 3 jest tests pass
 
-## 3. Remaining for Phase 4
+## 3. FCM push notifications
+
+- [x] `users/{uid}.fcmTokens?: string[]` field added to schema + zod
+- [x] Pure `buildNotification(input, locale)` in shared — en + lg copy, deep-link data payload. 5 unit tests cover all event kinds + locale switching
+- [x] Backend `sendPush(uid, input)` helper: reads user doc, fans out via `sendEachForMulticast`, prunes dead tokens (`registration-token-not-registered`)
+- [x] Callables `registerFcmToken` + `unregisterFcmToken`
+- [x] Firestore triggers: `onTransactionWritten` (deposit→confirmed), `onPayoutWritten` (→sent), `onClaimWritten` (→approved/rejected), `onUserKycWritten` (→approved)
+- [x] Mobile registers tokens via `expo-notifications` once KYC is approved; foreground handler shows the alert
+- [x] Backend builds clean; shared 20/20 + provider 16/16 + mobile 10/10 + admin 3/3 tests pass
+
+## 4. Remaining for Phase 4
+
 - [ ] Live MTN + Airtel sandbox verification once creds land
-- [ ] FCM push notifications (contribution confirmed, payout sent, claim status change, KYC approved)
 - [ ] Real Luganda translations (every key is keyed; just needs a translator)
-- [ ] RN component tests via jest-expo (preset module resolution under workspaces still flaky — Phase 4 should fix that properly, not work around it)
+- [ ] RN component tests via jest-expo (preset module resolution under workspaces still flaky)
+- [ ] Deep linking from notification taps into the relevant cycle/claim screen (data payload is there; router wiring is not)
 
 ---
 

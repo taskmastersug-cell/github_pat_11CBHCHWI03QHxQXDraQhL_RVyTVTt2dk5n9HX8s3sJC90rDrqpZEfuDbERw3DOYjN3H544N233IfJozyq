@@ -7,6 +7,7 @@ import { useAuth } from '../src/stores/auth';
 import { useUserDoc } from '../src/data/userDoc';
 import { initI18n } from '../src/i18n';
 import { theme } from '../src/ui/theme';
+import { registerPushNotifications, setForegroundHandler } from '../src/notifications/register';
 
 export default function RootLayout() {
   const [ready, setReady] = useState(false);
@@ -32,7 +33,13 @@ function AuthGate() {
   const router = useRouter();
   const segments = useSegments();
 
-  useEffect(() => { init(); }, [init]);
+  useEffect(() => { init(); setForegroundHandler(); }, [init]);
+
+  useEffect(() => {
+    if (profile?.kyc?.status === 'approved') {
+      registerPushNotifications().catch(() => {});
+    }
+  }, [profile?.kyc?.status]);
 
   useEffect(() => {
     if (!authReady) return;

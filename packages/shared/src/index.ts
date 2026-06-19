@@ -33,3 +33,8 @@ export { applyEvent } from './engine/apply.js';
 export type { EngineResult } from './engine/apply.js';
 
 export * as schemas from './schemas/firestore.js';
+
+export { buildNotification } from './notifications/messages.js';
+export type {
+  NotificationKind, NotificationInput, BuiltNotification,
+} from './notifications/messages.js';

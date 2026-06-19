@@ -11,6 +11,12 @@ export { initiateContribution } from './api/contributions.js';
 export { placeBid } from './api/bids.js';
 export { fileClaim, approveClaim, mintEvidenceUploadUrl, readEvidence } from './api/claims.js';
 export { requestExit } from './api/exit.js';
+export { registerFcmToken, unregisterFcmToken } from './api/notifications.js';
+
+// Firestore triggers (FCM push)
+export {
+  onTransactionWritten, onPayoutWritten, onClaimWritten, onUserKycWritten,
+} from './notifications/triggers.js';
 
 // Webhooks
 export { mtnMomoWebhook, airtelMoneyWebhook } from './webhooks/http.js';

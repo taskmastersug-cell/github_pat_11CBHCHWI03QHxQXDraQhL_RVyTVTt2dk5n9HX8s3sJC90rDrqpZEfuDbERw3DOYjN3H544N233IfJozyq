@@ -43,3 +43,6 @@ export const mintEvidenceUploadUrl = call<
 >('mintEvidenceUploadUrl');
 
 export const requestExit = call<{ chamaId: string }, { ok: true }>('requestExit');
+
+export const registerFcmToken = call<{ token: string }, { ok: true }>('registerFcmToken');
+export const unregisterFcmToken = call<{ token: string }, { ok: true }>('unregisterFcmToken');
